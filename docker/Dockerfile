@@ -30,6 +30,7 @@ RUN apt-get update && \
     locales \
     build-essential \
     cmake \
+    locales \
     python3-colcon-common-extensions
 
 RUN apt-get update && \
