@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  sima_navigation:
+    build: .
+    image: stanly/eurobot2026-sima-nav2:latest
+    container_name: sima_navigation
+    command: /bin/bash
+    tty: true
+    network_mode: host
+    ipc: host
+    privileged: true
+    stdin_open: true
+    stop_grace_period: &STOP_GRACE_PERIOD 1s
+
+    volumes:
+      - ${HOME}/Eurobot-2026-SIMA:/home/user/Eurobot-2026-SIMA
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - $HOME/.Xauthority:/home/user/.Xauthority
+      - /dev:/dev
+
+    working_dir:
+      /home/user/Eurobot-2026-SIMA
+
+    environment:
+      - DISPLAY=${DISPLAY}  # Set display environment variable
+      - RCUTILS_COLORIZED_OUTPUT=1
+      - XAUTHORITY=/home/user/.Xauthority   # Set Xauthority path
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - ROS_DOMAIN_ID=50  # ! Please distinguish the domain ID with other containers

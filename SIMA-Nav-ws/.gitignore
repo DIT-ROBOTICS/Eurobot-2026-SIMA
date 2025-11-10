@@ -1,0 +1,13 @@
+# ROS build artifacts
+build/
+devel/
+install/
+log/
+
+# Log files
+*.log
+
+# Backup files
+*~
+*.swp
+*.swo
