@@ -166,10 +166,10 @@ def generate_launch_description():
     ld.add_action(declare_robot_pose_remap_cmd)
 
     # Add the actions to launch all of the navigation nodes
-    ld.add_action(rviz_cmd)
+    # ld.add_action(rviz_cmd)
     ld.add_action(bringup_cmd)
 
     # Add the system check node
-    ld.add_action(system_check_cmd)
+    # ld.add_action(system_check_cmd)
 
     return ld
