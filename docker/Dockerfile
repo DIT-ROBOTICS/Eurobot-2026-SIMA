@@ -42,7 +42,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
 COPY docker-modules/install-ros2.sh /tmp/install-ros2.sh
 RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     chmod +x /tmp/install-ros2.sh && \
-    /tmp/install-ros2.sh && \
+    ./tmp/install-ros2.sh && \
     rm /tmp/install-ros2.sh
 
 
@@ -75,6 +75,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     ros-$ROS_DISTRO-test-msgs \
     ros-$ROS_DISTRO-bondcpp \
     ros-$ROS_DISTRO-foxglove-bridge \
+    ros-$ROS_DISTRO-ament-lint-auto \
     ros-$ROS_DISTRO-rmw-cyclonedds-cpp && \
     rm -rf /var/lib/apt/lists/*
 
@@ -84,6 +85,11 @@ RUN groupadd --gid ${USERGID} ${USERNAME} \
     && useradd --uid ${USERID} --gid ${USERGID} -m ${USERNAME} -s /bin/bash \
     && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
+RUN apt update && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends tzdata
+RUN TZ=Asia/Taipei && \
+    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
+    echo $TZ > /etc/timezone && \
+    dpkg-reconfigure -f noninteractive tzdata 
 
 USER ${USERNAME}
 WORKDIR /home/${USERNAME}

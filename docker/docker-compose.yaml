@@ -1,10 +1,10 @@
 version: '3.8'
 
 services:
-  sima_navigation:
+  sima:
     build: .
-    image: stanly/eurobot2026-sima-nav2:latest
-    container_name: sima_navigation
+    image: stanly/eurobot2026-sima:latest
+    container_name: sima
     command: /bin/bash
     tty: true
     network_mode: host
@@ -14,13 +14,15 @@ services:
     stop_grace_period: &STOP_GRACE_PERIOD 1s
 
     volumes:
-      - ..:/home/user/SIMA_Nav-ws
+      - ../SIMA-ws:/home/user/SIMA-ws
       - /tmp/.X11-unix:/tmp/.X11-unix
       - $HOME/.Xauthority:/home/user/.Xauthority
       - /dev:/dev
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
 
     working_dir:
-      /home/user/SIMA_Nav-ws
+      /home/user/SIMA-ws
 
     environment:
       - DISPLAY=${DISPLAY}  # Set display environment variable
