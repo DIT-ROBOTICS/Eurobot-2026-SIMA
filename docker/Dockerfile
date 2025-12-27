@@ -79,6 +79,12 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     ros-$ROS_DISTRO-rmw-cyclonedds-cpp && \
     rm -rf /var/lib/apt/lists/*
 
+# install ros2 robot_localization
+RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
+    apt-get update && \
+    apt-get install -y \
+    ros-$ROS_DISTRO-robot-localization && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user to use the container
 RUN groupadd --gid ${USERGID} ${USERNAME} \

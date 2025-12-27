@@ -3,7 +3,7 @@ version: '3.8'
 services:
   sima:
     build: .
-    image: stanly/eurobot2026-sima:latest
+    image: eurobot2026-sima-base:latest
     container_name: sima
     command: /bin/bash
     tty: true
