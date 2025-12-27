@@ -15,7 +15,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build the Docker image
-      run: docker build -t stanlyhung/eurobot2026-sima-base:$(date +%s) -f docker/Dockerfile
+      run: docker build ./docker -t stanlyhung/eurobot2026-sima-base:$(date +%s) -f docker/Dockerfile
     # - name: Log in to Docker Hub
     #   uses: docker/login-action@v2
     #   with:
