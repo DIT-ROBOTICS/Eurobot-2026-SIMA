@@ -37,7 +37,7 @@ void RobotPoseNode::update_pose()
     // Create and send the transform
     geometry_msgs::msg::TransformStamped transformStamped;
     transformStamped.header.stamp = current_time;
-    transformStamped.header.frame_id = "map";
+    transformStamped.header.frame_id = "world";
     transformStamped.child_frame_id = "robot_base";
     transformStamped.transform.translation.x = x_;
     transformStamped.transform.translation.y = y_;
