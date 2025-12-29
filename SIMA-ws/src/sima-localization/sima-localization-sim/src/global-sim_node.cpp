@@ -9,7 +9,7 @@ GlobalSimNode::GlobalSimNode()
       max_rotation_noise_(0.05)
 {
     publisher_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
-        "robot_pose", 10);
+        "pose/global", 10);
 
     // Initialize TF2 buffer and listener
     tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
@@ -41,7 +41,7 @@ bool GlobalSimNode::get_theoretical_pose(geometry_msgs::msg::PoseWithCovarianceS
     {
         // Look up the transform from map to robot_base
         geometry_msgs::msg::TransformStamped transform_stamped = tf_buffer_->lookupTransform(
-            "map", "robot_base", tf2::TimePointZero);
+            "world", "robot_base", tf2::TimePointZero);
 
         // Convert transform to pose
         pose_msg.pose.pose.position.x = transform_stamped.transform.translation.x;

@@ -49,6 +49,13 @@ install(TARGETS robot_pose_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
+# add launch files into install folder
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}/
+)
+
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
