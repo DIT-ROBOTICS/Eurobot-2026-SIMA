@@ -6,17 +6,17 @@ def generate_launch_description():
         Node(
             package='sima-localization-sim',
             executable='global_sim_node',
-            name='sim'
+            name='global_sim_node'
         ),
         Node(
             package='sima-localization-sim',
             executable='odom_sim_node',
-            name='sim'
+            name='odom_sim_node'
         ),
         Node(
             package='sima-localization-sim',
             executable='robot_pose_node',
-            name='sim'
+            name='robot_pose_node'
         ),
         # Static transform publisher from 'world' to 'map'
         Node(

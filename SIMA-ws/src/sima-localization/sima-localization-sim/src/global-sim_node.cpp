@@ -79,6 +79,17 @@ void GlobalSimNode::add_noise_to_pose(geometry_msgs::msg::PoseWithCovarianceStam
     pose_msg.pose.pose.orientation.x = 0.0;
     pose_msg.pose.pose.orientation.y = 0.0;
     pose_msg.pose.pose.orientation.z = sin(noisy_yaw / 2.0);
+    // Set covariance matrix for the pose
+    // Initialize all covariance values to zero first
+    std::fill(pose_msg.pose.covariance.begin(), pose_msg.pose.covariance.end(), 0.0);
+    
+    // Diagonal values represent variance (std_dev^2) for x, y, z, roll, pitch, yaw
+    pose_msg.pose.covariance[0] = max_linear_noise_ * max_linear_noise_;   // x variance
+    pose_msg.pose.covariance[7] = max_linear_noise_ * max_linear_noise_;   // y variance
+    pose_msg.pose.covariance[14] = 1e-6;                              // z variance (small but non-zero for 2D)
+    pose_msg.pose.covariance[21] = 1e-6;                              // roll variance (small but non-zero for 2D)
+    pose_msg.pose.covariance[28] = 1e-6;                              // pitch variance (small but non-zero for 2D)
+    pose_msg.pose.covariance[35] = max_rotation_noise_ * max_rotation_noise_; // yaw variance
 }
 
 

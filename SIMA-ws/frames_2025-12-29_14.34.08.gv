@@ -1,8 +1,0 @@
-digraph G {
-"world" -> "robot_base"[label=" Broadcaster: default_authority\nAverage rate: 100.199\nBuffer length: 5.03\nMost recent transform: 1766990048.239754\nOldest transform: 1766990043.209768\n"];
-"world" -> "map"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
-edge [style=invis];
- subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
-"Recorded at time: 1766990048.2466207"[ shape=plaintext ] ;
-}->"world";
-}

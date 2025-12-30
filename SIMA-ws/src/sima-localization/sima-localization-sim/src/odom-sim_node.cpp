@@ -1,4 +1,5 @@
 #include "sima-localization-sim/odom-sim_node.hpp"
+#include <algorithm>
 
 OdomSimNode::OdomSimNode()
     : Node("odom_sim_node"), x_(0.0), y_(0.0), theta_(0.0),
@@ -53,7 +54,17 @@ void OdomSimNode::timer_callback()
     odom_msg_.twist.twist.linear.x = vx;
     odom_msg_.twist.twist.linear.y = vy;        
     odom_msg_.twist.twist.angular.z = omega;
-    
+
+    // Set covariance matrix for the twist (velocity)
+    // Diagonal values represent variance (std_dev^2) for vx, vy, vz, roll rate, pitch rate, yaw rate
+    std::fill(odom_msg_.twist.covariance.begin(), odom_msg_.twist.covariance.end(), 0.0);
+    odom_msg_.twist.covariance[0] = 0.05 * 0.05;   // vx variance
+    odom_msg_.twist.covariance[7] = 0.05 * 0.05;   // vy variance
+    odom_msg_.twist.covariance[14] = 1e-6;         // vz variance (small but non-zero for 2D)
+    odom_msg_.twist.covariance[21] = 1e-6;         // roll rate variance (small but non-zero for 2D)
+    odom_msg_.twist.covariance[28] = 1e-6;         // pitch rate variance (small but non-zero for 2D)
+    odom_msg_.twist.covariance[35] = 0.05 * 0.05;  // yaw rate variance
+
     // Publish odometry
     odom_pub_->publish(odom_msg_);
     last_time_ = current_time;
