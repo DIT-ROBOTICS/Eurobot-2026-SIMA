@@ -1,0 +1,7 @@
+<launch>
+    <!-- Launch localization simulation -->
+    <include file="$(find-pkg-share sima-localization-sim)/launch/localization_sim.launch.py" />
+    
+    <!-- Launch robot localization -->
+    <include file="$(find-pkg-share sima-localization-sim)/launch/robot_localization.launch.py" />
+</launch>
