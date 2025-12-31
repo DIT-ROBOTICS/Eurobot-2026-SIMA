@@ -60,6 +60,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     ros-$ROS_DISTRO-tf2-sensor-msgs \
     ros-$ROS_DISTRO-libg2o \
     ros-$ROS_DISTRO-teleop-twist-keyboard \
+    ros-$ROS_DISTRO-navigation2 \
+    ros-$ROS_DISTRO-nav2-bringup \
     ros-$ROS_DISTRO-geographic-msgs \
     ros-$ROS_DISTRO-geometry-msgs \
     ros-$ROS_DISTRO-test-msgs \
@@ -67,6 +69,12 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     ros-$ROS_DISTRO-foxglove-bridge \
     ros-$ROS_DISTRO-ament-lint-auto \
     ros-$ROS_DISTRO-rmw-cyclonedds-cpp && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
+    apt-get update && \
+    apt-get install -y \
+    ros-$ROS_DISTRO-robot-localization && \
     rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user to use the container

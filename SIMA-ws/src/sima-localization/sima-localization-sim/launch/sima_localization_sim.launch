@@ -4,4 +4,12 @@
     
     <!-- Launch robot localization -->
     <include file="$(find-pkg-share sima-localization-sim)/launch/robot_localization.launch.py" />
+
+    <!-- Launch RViz -->
+    <include file="$(find-pkg-share sima-localization-sim)/launch/localization_sim_rviz.launch.py" />
+
+    <!-- Launch teleop_twist_joy -->
+    <include file="$(find-pkg-share teleop_twist_joy)/launch/teleop-launch.py">
+        <arg name="joy_config" value="ps5"/>
+  </include>
 </launch>
