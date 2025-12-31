@@ -1,0 +1,8 @@
+<library path="diff_controller">
+  <class
+    name="diff_controller::DiffController"
+    type="diff_controller::DiffController"
+    base_class_type="nav2_core::Controller">
+    <description>Simple diff-drive pure pursuit controller plugin.</description>
+  </class>
+</library>
