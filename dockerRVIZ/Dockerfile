@@ -1,4 +1,3 @@
-
 # Dockerfile for Nav2 on RPI5(arm64)
 FROM osrf/ros:humble-desktop
 
