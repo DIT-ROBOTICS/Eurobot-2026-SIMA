@@ -8,16 +8,6 @@ set -e
 #       as they may not be required for all applications. 
 #       Please install any other necessary packages in the Dockerfile.  
 
-# Check required environment variables
-# if [ -z "$TARGETARCH" ]; then
-#     echo "Error: TARGETARCH environment variable is required but not set"
-#     exit 1
-# fi
-# if [ -z "$ROS_DISTRO" ]; then
-#     echo "Skipping ROS installation as ROS_DISTRO is not set"
-#     exit 0
-# fi
-
 echo "Installing ROS components for architecture: $TARGETARCH"
 
 # Update and upgrade the system
