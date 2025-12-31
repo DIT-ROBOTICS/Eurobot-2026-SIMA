@@ -15,37 +15,14 @@ check_root() {
     fi
 }
 
-# Function to prompt for user input
-prompt_user_config() {
-    echo "=== Git Configuration Setup ==="
-    read -p "Enter your Git username: " GIT_USERNAME
-    read -p "Enter your Git email: " GIT_EMAIL
-}
-
 # Check if not running as root
 check_root
-
-# Prompt for user configuration
-prompt_user_config
 
 echo "=== Updating System Packages ==="
 sudo apt update
 sudo apt upgrade -y
 sudo apt autoremove -y
 sudo apt autoclean
-
-echo "=== Installing OpenSSH Server ==="
-sudo apt install -y openssh-server
-sudo systemctl enable ssh
-echo "SSH server installed and enabled"
-
-echo "=== Installing Git and Network Tools ==="
-sudo apt install -y git net-tools
-
-echo "=== Configuring Git ==="
-git config --global user.name "$GIT_USERNAME"
-git config --global user.email "$GIT_EMAIL"
-echo "Git configured with username: $GIT_USERNAME and email: $GIT_EMAIL"
 
 echo "=== Configuring Fan Settings ==="
 echo "Adding fan configuration to /boot/firmware/config.txt"
