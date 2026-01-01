@@ -39,7 +39,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     rm -rf /var/lib/apt/lists/*
 
 # install ros2
-COPY docker-modules/install-ros2.sh /tmp/install-ros2.sh
+COPY script/install-ros2.sh /tmp/install-ros2.sh
 RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     chmod +x /tmp/install-ros2.sh && \
     ./tmp/install-ros2.sh && \
