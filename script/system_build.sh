@@ -22,25 +22,25 @@ echo "=== Updating System Packages ==="
 sudo apt update
 sudo apt upgrade -y
 sudo apt autoremove -y
-sudo apt autoclean
-
-echo "=== Configuring Fan Settings ==="
-echo "Adding fan configuration to /boot/firmware/config.txt"
-echo "Please note: You may need to manually edit /boot/firmware/config.txt if this fails"
+sudo apt autoclean -y
 
 # Backup the config file
 sudo cp /boot/firmware/config.txt /boot/firmware/config.txt.backup.$(date +%Y%m%d_%H%M%S)
 
 # Check if fan settings already exist
-if ! grep -q "dtparam=cooling_fan=on" /boot/firmware/config.txt; then
-    echo "" | sudo tee -a /boot/firmware/config.txt
-    echo "# Fan configuration added by system_build.sh" | sudo tee -a /boot/firmware/config.txt
-    echo "dtparam=cooling_fan=on" | sudo tee -a /boot/firmware/config.txt
-    echo "dtparam=fan_temp3=36000,fan_temp3_hyst=5000,fan_temp3_speed=255" | sudo tee -a /boot/firmware/config.txt
-    echo "Fan configuration added to config.txt"
-else
-    echo "Fan configuration already exists in config.txt"
-fi
+echo "" | sudo tee -a /boot/firmware/config.txt
+echo "# Fan configuration added by system_build.sh" | sudo tee -a /boot/firmware/config.txt
+echo "dtparam=cooling_fan=on" | sudo tee -a /boot/firmware/config.txt
+echo "dtparam=fan_temp3=30000,fan_temp3_hyst=5000,fan_temp3_speed=255" | sudo tee -a /boot/firmware/config.txt
+echo "Fan configuration added to config.txt"
+
+# Enable UART
+echo "=== Enabling UART ==="
+echo "" | sudo tee -a /boot/firmware/config.txt
+echo "enable_uart=1" | sudo tee -a /boot/firmware/config.txt
+echo "dtoverlay=uart0" | sudo tee -a /boot/firmware/config.txt
+echo "UART enabled in config.txt"
+
 
 echo "=== Installing Docker ==="
 # Remove old Docker packages
@@ -72,17 +72,3 @@ sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plug
 # Add user to docker group
 echo "Adding user $USER to docker group..."
 sudo usermod -aG docker $USER
-
-echo "=== System Build Setup Complete ==="
-echo ""
-echo "IMPORTANT NOTES:"
-echo "1. You need to log out and log back in (or reboot) for Docker group changes to take effect"
-echo "2. Fan settings have been added to /boot/firmware/config.txt - a reboot is required for these to take effect"
-echo "3. A backup of your original config.txt has been created"
-echo "4. SSH server is now enabled and running"
-echo "5. Git has been configured with your provided credentials"
-echo ""
-echo "To verify Docker installation after relogging, run: docker --version"
-echo "To verify Docker group membership, run: groups"
-echo ""
-echo "Setup completed successfully!"
