@@ -1,7 +1,7 @@
 #include "sima-localization-sim/robot-pose_node.hpp"
 
 RobotPoseNode::RobotPoseNode()
-    : Node("robot_pose_node"), x_(0.0), y_(0.0), theta_(0.0)
+    : Node("robot_pose_node"), x_(0.5), y_(0.5), theta_(0.0)
 {
     cmd_vel_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
         "cmd_vel", 10,

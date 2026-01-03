@@ -135,36 +135,19 @@ def generate_launch_description():
             remappings=remappings,
             output='screen'),
 
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource(os.path.join(launch_dir,
-        #                                                'localization_launch.py')),
-        #     launch_arguments={'namespace': namespace,
-        #                       'map': map_yaml_file,                        
-        #                       'use_sim_time': use_sim_time,
-        #                       'autostart': autostart,
-        #                       'params_file': params_file,
-        #                       'use_composition': use_composition,
-        #                       'use_respawn': use_respawn,
-        #                       'use_odometry_sim': use_odometry_sim,
-        #                       'container_name': 'nav2_container'}.items()),
         IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(get_package_share_directory('sima-localization-sim'), 'launch', 'simalocalization_sim.launch.py')),
+            PythonLaunchDescriptionSource(os.path.join(launch_dir,
+                                                       'localization_launch.py')),
             launch_arguments={'namespace': namespace,
+                              'map': map_yaml_file,                        
                               'use_sim_time': use_sim_time,
                               'autostart': autostart,
                               'params_file': params_file,
                               'use_composition': use_composition,
-                              'use_respawn': use_respawn}.items()),
-
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(get_package_share_directory('sima-localization-sim'), 'launch', 'robot_localization.launch.py')),
-            launch_arguments={'namespace': namespace,
-                              'use_sim_time': use_sim_time,
-                              'autostart': autostart,
-                              'params_file': params_file,
-                              'use_composition': use_composition,
-                              'use_respawn': use_respawn}.items()),
-
+                              'use_respawn': use_respawn,
+                              'use_odometry_sim': use_odometry_sim,
+                              'container_name': 'nav2_container'}.items()),
+        
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(launch_dir, 'navigation_launch.py')),
             launch_arguments={'namespace': namespace,

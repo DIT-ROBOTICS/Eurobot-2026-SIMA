@@ -25,7 +25,7 @@ ekf_filter_node_odom:
     odom0_differential: false
     odom0_relative: false
 
-    initial_state: [0.0, 0.0, 0.0,
+    initial_state: [0.5, 0.5, 0.0,
                     0.0, 0.0, 0.0, 
                     0.0, 0.0, 0.0,
                     0.0, 0.0, 0.0, 
@@ -100,6 +100,12 @@ ekf_filter_node_map:
     
 
     use_control: false
+
+    initial_state: [0.5, 0.5, 0.0,
+                    0.0, 0.0, 0.0, 
+                    0.0, 0.0, 0.0,
+                    0.0, 0.0, 0.0, 
+                    0.0, 0.0, 0.0]
 
     process_noise_covariance: [1e-4,   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
                                0.0,    1e-4,   0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,

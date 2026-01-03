@@ -2,13 +2,15 @@ import os
 
 from ament_index_python.packages import get_package_share_directory # type: ignore
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable # type: ignore
+from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable, IncludeLaunchDescription # type: ignore
 from launch.conditions import IfCondition # type: ignore
 from launch.substitutions import LaunchConfiguration, PythonExpression # type: ignore
 from launch_ros.actions import LoadComposableNodes # type: ignore
 from launch_ros.actions import Node # type: ignore
 from launch_ros.descriptions import ComposableNode, ParameterFile # type: ignore
 from nav2_common.launch import RewrittenYaml # type: ignore
+from launch.launch_description_sources import PythonLaunchDescriptionSource # type: ignore
+from launch.substitutions import LaunchConfiguration, PythonExpression # type: ignore
 
 
 def generate_launch_description():
@@ -32,7 +34,7 @@ def generate_launch_description():
     # Remappings
     remappings = [('/tf', 'tf'),
                   ('/tf_static', 'tf_static'),
-                  ('odom', robot_pose_remap)]
+                  ('/odom/wheel', robot_pose_remap)]
 
     # Parameter substitution
     param_substitutions = {
@@ -74,22 +76,44 @@ def generate_launch_description():
         'log_level', default_value='info', description='Log level')
 
     # Load static transform & odometry simulation
-    localization_sim = GroupAction(
-        condition=IfCondition(use_odometry_sim),
-        actions=[
-            Node(
-                package='navigation2_run',
-                executable='odometry_sim',
-                name='odometry_sim',
-                output='screen',
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[{"cmd_cb_name": "/cmd_vel"}],
-                arguments=['--ros-args', '--log-level', log_level],
-                remappings=remappings
-            )
-        ]
-    )
+    # localization_sim = GroupAction(
+    #     condition=IfCondition(use_odometry_sim),
+    #     actions=[
+    #         Node(
+    #             package='navigation2_run',
+    #             executable='odometry_sim',
+    #             name='odometry_sim',
+    #             output='screen',
+    #             respawn=use_respawn,
+    #             respawn_delay=2.0,
+    #             parameters=[{"cmd_cb_name": "/cmd_vel"}],
+    #             arguments=['--ros-args', '--log-level', log_level],
+    #             remappings=remappings
+    #         )
+    #     ]
+    # )
+
+    brinup_localization_cmd_group = GroupAction([
+        IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(os.path.join(get_package_share_directory('sima-localization-sim'), 'launch', 'localization_sim.launch.py')),
+                launch_arguments={'namespace': namespace,
+                                'use_sim_time': use_sim_time,
+                                'autostart': autostart,
+                                'params_file': params_file,
+                                'use_composition': use_composition,
+                                'remappings': str(remappings),
+                                'use_respawn': use_respawn}.items()),
+
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(get_package_share_directory('sima-localization-sim'), 'launch', 'robot_localization.launch.py')),
+            launch_arguments={'namespace': namespace,
+                                'use_sim_time': use_sim_time,
+                                'autostart': autostart,
+                                'params_file': params_file,
+                                'use_composition': use_composition,
+                                'use_respawn': use_respawn}.items()),
+    ])
+
 
     # Load nodes group
     load_nodes = GroupAction(
@@ -156,8 +180,9 @@ def generate_launch_description():
     ld.add_action(declare_log_level_cmd)
 
     # Add nodes to launch description
-    ld.add_action(localization_sim)
+    # ld.add_action(localization_sim)
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)
+    ld.add_action(brinup_localization_cmd_group)
 
     return ld
