@@ -1,0 +1,11 @@
+# define the target nodes to be monitored by the Node Health Monitor
+nodes:
+  - name: "talker_node"           # The name of the node in the ROS graph
+    package: "demo_nodes_cpp"     # The package name
+    executable: "talker"          # The executable name
+    startup_delay: 2.0            # Wait a few seconds after startup before checking (allow initialization time)
+
+  - name: "listener_node"
+    package: "demo_nodes_cpp"
+    executable: "listener"
+    startup_delay: 2.0

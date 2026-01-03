@@ -1,0 +1,50 @@
+========== MONITORING SESSION STARTED: 2026-01-03_20-01-18 ==========
+Config loaded from: /home/user/SIMA-ws/install/node_health_monitor/share/node_health_monitor/config/target_nodes.yaml
+
+==================================================
+CHECK INTERVAL: 20:01:24
+--------------------------------------------------
+NODE STATUS SUMMARY:
+  talker_node          : PENDING (Retries: 1/3)
+  listener_node        : PENDING (Retries: 1/3)
+  Last Event: [2026-01-03 20:01:24] [START] Node 'listener_node' started with PID 28024
+
+==================================================
+CHECK INTERVAL: 20:01:29
+--------------------------------------------------
+NODE STATUS SUMMARY:
+  talker_node          : PENDING (Retries: 2/3)
+  listener_node        : PENDING (Retries: 2/3)
+  Last Event: [2026-01-03 20:01:29] [START] Node 'listener_node' started with PID 28097
+
+==================================================
+CHECK INTERVAL: 20:01:34
+--------------------------------------------------
+NODE STATUS SUMMARY:
+  talker_node          : PENDING (Retries: 3/3)
+  listener_node        : PENDING (Retries: 3/3)
+  Last Event: [2026-01-03 20:01:34] [START] Node 'listener_node' started with PID 28176
+
+==================================================
+CHECK INTERVAL: 20:01:39
+--------------------------------------------------
+NODE STATUS SUMMARY:
+  talker_node          : DEAD (Retries: 3/3)
+  listener_node        : DEAD (Retries: 3/3)
+  Last Event: [2026-01-03 20:01:39] [CRITICAL] Node 'listener_node' failed 3 times. Giving up.
+
+==================================================
+CHECK INTERVAL: 20:01:44
+--------------------------------------------------
+NODE STATUS SUMMARY:
+  talker_node          : DEAD (Retries: 3/3)
+  listener_node        : DEAD (Retries: 3/3)
+  Last Event: [2026-01-03 20:01:39] [CRITICAL] Node 'listener_node' failed 3 times. Giving up.
+
+==================================================
+CHECK INTERVAL: 20:01:49
+--------------------------------------------------
+NODE STATUS SUMMARY:
+  talker_node          : DEAD (Retries: 3/3)
+  listener_node        : DEAD (Retries: 3/3)
+  Last Event: [2026-01-03 20:01:39] [CRITICAL] Node 'listener_node' failed 3 times. Giving up.
