@@ -67,8 +67,6 @@ bt_navigator:
 
 ControllerSelector:
   ros__parameters:
-    Fast_controller: "Fast"
-    Slow_controller: "Slow"
     Diff_controller: "Diff"
 
 bt_navigator_navigate_through_poses_rclcpp_node:
@@ -91,7 +89,7 @@ controller_server:
     failure_tolerance: 0.0
     progress_checker_plugin: "progress_checker"
     goal_checker_plugins: ["Precise", "Unerring", "Loose"]
-    controller_plugins: ["Fast", "Slow", "LinearBoost", "AngularBoost", "Diff"]
+    controller_plugins: ["Diff"]
 
     # Progress checker parameters
     progress_checker:
@@ -119,61 +117,13 @@ controller_server:
     Loose:
       stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.03
+      xy_goal_tolerance: 0.01
       # yaw_goal_tolerance: 0.07
       yaw_goal_tolerance: 3.14
       xy_debounce_threshold: 1
       yaw_debounce_threshold: 1
 
     # Controller parameters
-    Fast:
-      plugin: "custom_controller::CustomController"
-      max_linear_vel: 1.1
-      max_angular_vel: 12.0
-      linear_kp: 2.2
-      angular_kp: 3.7
-      transform_tolerance: 0.1
-      look_ahead_distance: 0.2
-      speed_decade: 0.125
-      costmap_tolerance: 95 # rival is 98
-      keep_planning: false
-      
-    Slow:
-      plugin: "custom_controller::CustomController"
-      max_linear_vel: 0.8
-      max_angular_vel: 2.0
-      linear_kp: 2.2
-      angular_kp: 3.7
-      transform_tolerance: 0.1
-      look_ahead_distance: 0.2
-      speed_decade: 0.125
-      costmap_tolerance: 95 # rival is 98
-      keep_planning: false
-    
-    LinearBoost:
-      plugin: "custom_controller::CustomController"
-      max_linear_vel: 1.1
-      max_angular_vel: 2.0
-      linear_kp: 2.2
-      angular_kp: 3.7
-      transform_tolerance: 0.1
-      look_ahead_distance: 0.2
-      speed_decade: 0.125
-      costmap_tolerance: 95 # rival is 98
-      keep_planning: false
-
-    AngularBoost:
-      plugin: "custom_controller::CustomController"
-      max_linear_vel: 0.5
-      max_angular_vel: 12.0
-      linear_kp: 2.2
-      angular_kp: 3.7
-      transform_tolerance: 0.1
-      look_ahead_distance: 0.2
-      speed_decade: 0.125
-      costmap_tolerance: 95 # rival is 98
-      keep_planning: false
-
     Diff:
       plugin: "diff_controller::DiffController"
       desired_linear_vel: 0.4
@@ -201,27 +151,9 @@ local_costmap:
       resolution: 0.01
       robot_radius: 0.075
       plugins: ["static_layer", "inflation_layer"]
-      # plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
-        map_subscribe_transient_local: True
-
-      # obstacle_layer:
-      #   plugin: "nav2_costmap_2d::ObstacleLayer"
-      #   enabled: True
-      #   observation_sources: fake_obstacle
-        
-      #   fake_obstacle:
-      #     topic: /detected_obstacles
-      #     max_obstacle_height: 2.0
-      #     clearing: True   
-      #     marking: True    
-      #     data_type: "PointCloud2"
-      #     raytrace_max_range: 3.0
-      #     raytrace_min_range: 0.0
-      #     obstacle_max_range: 2.5
-      #     obstacle_min_range: 0.0
-      
+        map_subscribe_transient_local: True      
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
@@ -307,6 +239,7 @@ global_costmap:
         column_inflation_radius: 0.22
         board_inflation_radius: 0.22
         cost_scaling_factor: 3.0
+        base_frame: "base_link"       # added
       keepout_layer:
         plugin: "keepout_costmap_plugin::KeepoutLayer"
         enabled: True
@@ -368,7 +301,7 @@ behavior_server:
     shrink:
       plugin: "nav2_behaviors/Shrink"
     global_frame: map
-    robot_base_frame: base_footprint
+    robot_base_frame: base_link
     transform_tolerance: 0.1
     use_sim_time: False
     simulate_ahead_time: 2.0
@@ -413,7 +346,7 @@ docking_server:
     wait_charge_timeout: 5.0
     dock_approach_timeout: 3.0
     max_retries: 0
-    base_frame: "base_footprint"
+    base_frame: "base_link"
     fixed_frame: "map"
     dock_backwards: false
     dock_prestaging_tolerance: 0.01
@@ -433,7 +366,7 @@ docking_server:
       staging_yaw_offset: 1.57
       use_battery_status: false
       use_stall_detection: false
-      base_frame: "base_footprint"
+      base_frame: "base_link"
 
     docks: ['home_dock']
     home_dock:

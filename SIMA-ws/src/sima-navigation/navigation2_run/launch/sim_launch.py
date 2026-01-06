@@ -33,15 +33,18 @@ def generate_launch_description():
     launch_dir = os.path.join(pkg_dir, 'launch')
     ros_domain_id = os.getenv('ROS_DOMAIN_ID')
 
-    if ros_domain_id == '11':
-        params_file_name = 'nav2_params_11.yaml'
-        print('[INFO] [sim_launch] ROS_DOMAIN_ID=11. Use nav2_params_11.yaml')
-    elif ros_domain_id == '14':
-        params_file_name = 'nav2_params_14.yaml'
-        print('[INFO] [sim_launch] ROS_DOMAIN_ID=14. Use nav2_params_14.yaml')
-    else:
-        params_file_name = 'nav2_params_default.yaml'
-        print(f'[INFO] [sim_launch] Unrecognized ROS_DOMAIN_ID={ros_domain_id}. Use default params file')
+    params_file_name = 'nav2_params_sima.yaml'
+    print('[INFO] [sim_launch] Use nav2_params_sima.yaml')
+
+    # if ros_domain_id == '11':
+    #     params_file_name = 'nav2_params_11.yaml'
+    #     print('[INFO] [sim_launch] ROS_DOMAIN_ID=11. Use nav2_params_11.yaml')
+    # elif ros_domain_id == '14':
+    #     params_file_name = 'nav2_params_14.yaml'
+    #     print('[INFO] [sim_launch] ROS_DOMAIN_ID=14. Use nav2_params_14.yaml')
+    # else:
+    #     params_file_name = 'nav2_params_default.yaml'
+    #     print(f'[INFO] [sim_launch] Unrecognized ROS_DOMAIN_ID={ros_domain_id}. Use default params file')
 
     namespace = LaunchConfiguration('namespace')
     use_namespace = LaunchConfiguration('use_namespace')
