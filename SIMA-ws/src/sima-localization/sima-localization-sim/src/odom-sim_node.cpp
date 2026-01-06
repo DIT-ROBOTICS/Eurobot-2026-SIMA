@@ -52,7 +52,7 @@ void OdomSimNode::timer_callback()
     
     // Set velocity data
     odom_msg_.twist.twist.linear.x = vx;
-    odom_msg_.twist.twist.linear.y = vy;        
+    // odom_msg_.twist.twist.linear.y = vy;        
     odom_msg_.twist.twist.angular.z = omega;
 
     // Set covariance matrix for the twist (velocity)
