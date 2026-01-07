@@ -59,8 +59,8 @@ def main():
     rclpy.init()
 
     # 建立一個臨時 Node 用來發送 EKF 初始位置
-    node = rclpy.create_node('pose_setter')
-    set_ekf_pose(node, 0.5, 1.5, yaw=0.0)
+    # node = rclpy.create_node('pose_setter')
+    # set_ekf_pose(node, 0.5, 1.5, yaw=0.0)
     
     # 建立一個臨時 Node 用來發送 Controller 切換訊號
     # 因為 BasicNavigator 本身沒辦法發送自定義 topic，所以我們自己建一個 node
@@ -106,10 +106,10 @@ def main():
     waypoints = []
     
     # 點 1: 假設要先經過場地左側
-    waypoints.append(create_pose(navigator, 0.5, 1.0))
+    waypoints.append(create_pose(navigator, 0.5, 0.7))
     
     # 點 2: 然後往中間走
-    waypoints.append(create_pose(navigator, 1.5, 0.5))
+    waypoints.append(create_pose(navigator, 2.0, 0.7))
     
     # 點 3 (終點): 最後停在右上角
     # 注意：最後一點的角度很重要，機器人最後會轉向這個角度

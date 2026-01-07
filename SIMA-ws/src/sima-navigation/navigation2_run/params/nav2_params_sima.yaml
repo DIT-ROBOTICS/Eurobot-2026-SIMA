@@ -126,7 +126,7 @@ controller_server:
     # Controller parameters
     Diff:
       plugin: "diff_controller::DiffController"
-      desired_linear_vel: 0.4
+      desired_linear_vel: 0.1
       lookahead_dist: 0.1
       max_angular_vel: 1.5
       min_linear_vel: 0.0
@@ -150,14 +150,20 @@ local_costmap:
       height: 2
       resolution: 0.01
       robot_radius: 0.075
+      # plugins: ["static_layer", "sensor_layer", "inflation_layer"]
       plugins: ["static_layer", "inflation_layer"]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True      
+      sensor_layer:
+        plugin: "Sensor_costmap_plugin::SensorLayer"
+        enabled: True
+        obstacle_radius: 0.01
+        inflation_radius: 0.5
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 3.0
-        inflation_radius: 0.15
+        cost_scaling_factor: 5.0
+        inflation_radius: 0.2
 
       always_send_full_costmap: True
 
@@ -175,7 +181,7 @@ global_costmap:
       trinary_costmap: false
       lethal_cost_threshold: 10
       unknown_cost_value: 255
-      plugins: ["static_layer", "obstacle_layer", "inflation_layer", "rival_layer", "object_layer", "keepout_layer"]
+      plugins: ["static_layer", "obstacle_layer", "sensor_layer", "inflation_layer", "rival_layer", "object_layer", "keepout_layer"]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
@@ -194,6 +200,11 @@ global_costmap:
           raytrace_min_range: 0.0
           obstacle_max_range: 2.5
           obstacle_min_range: 0.0
+      sensor_layer:
+        plugin: "Sensor_costmap_plugin::SensorLayer"
+        enabled: True
+        obstacle_radius: 0.075
+        inflation_radius: 0.2
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 5.0
