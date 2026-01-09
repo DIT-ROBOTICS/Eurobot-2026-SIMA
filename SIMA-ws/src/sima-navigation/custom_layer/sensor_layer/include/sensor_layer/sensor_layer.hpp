@@ -110,9 +110,19 @@
 #include "geometry_msgs/msg/pose_array.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include <vector> // 需要 vector
+#include <mutex>
 
 namespace Sensor_costmap_plugin
 {
+
+struct ObstacleNode 
+{
+    double x;
+    double y;
+    double z;
+    rclcpp::Time last_seen_time;
+};
+
 
 class SensorLayer : public nav2_costmap_2d::Layer
 {
@@ -136,18 +146,22 @@ public:
 private:
   void poseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg);
 
+  void removeOutdatedObstacles();
+
   rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr sub_;
   
   // === 關鍵修改：這就是我們的「記憶庫」 ===
   // 存放所有歷史偵測到的障礙物中心點 (World Frame / Map Frame)
-  std::vector<geometry_msgs::msg::Point> persistent_obstacles_;
+  std::vector<ObstacleNode> persistent_obstacles_;
   
   std::mutex data_mutex_;
 
   double obstacle_radius_;
   double inflation_radius_;
+  double cost_scaling_factor_;
+  double obstacle_lifespan_ = 5.0;
 };
 
-}  // namespace sensor_layer
+}  // namespace Sensor_costmap_plugin
 
 #endif

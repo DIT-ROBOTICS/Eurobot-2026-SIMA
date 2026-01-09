@@ -432,6 +432,7 @@
 #include "geometry_msgs/msg/pose_array.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include <cmath> 
+#include <algorithm>
 
 PLUGINLIB_EXPORT_CLASS(Sensor_costmap_plugin::SensorLayer, nav2_costmap_2d::Layer)
 
@@ -455,9 +456,13 @@ void SensorLayer::onInitialize()
 
   node->declare_parameter(name_ + ".obstacle_radius", 0.15); 
   node->declare_parameter(name_ + ".inflation_radius", 0.2); 
+  node->declare_parameter(name_ + ".cost_scaling_factor", 5.0);
+  node->declare_parameter(name_ + ".obstacle_lifespan", 5.0);
   
   node->get_parameter(name_ + ".obstacle_radius", obstacle_radius_);
   node->get_parameter(name_ + ".inflation_radius", inflation_radius_);
+  node->get_parameter(name_ + ".cost_scaling_factor", cost_scaling_factor_);
+  node->get_parameter(name_ + ".obstacle_lifespan", obstacle_lifespan_);
 
   sub_ = node->create_subscription<geometry_msgs::msg::PoseArray>(
     "/sensors/detected_obstacles", 10,
@@ -482,6 +487,12 @@ void SensorLayer::poseArrayCallback(const geometry_msgs::msg::PoseArray::SharedP
   // 如果 SensorSim 發的是 map，我們要把點存成 map 還是 odom?
   // 建議：為了讓障礙物「固定在世界上」，這裡我們假設 SensorSim 發送的是 "map" frame 的座標
   // 我們直接存下來即可。
+
+  auto node = node_.lock();
+  if (!node) {
+      return;
+  }
+  rclcpp::Time now = node->now();
   
   for(const auto& new_pose : msg->poses)
   {
@@ -489,12 +500,13 @@ void SensorLayer::poseArrayCallback(const geometry_msgs::msg::PoseArray::SharedP
       
       // === 簡單的空間過濾 ===
       // 檢查這個新點是否已經存在於我們的記憶庫中 (距離太近就算重複)
-      for(const auto& existing_pt : persistent_obstacles_)
+      for(auto& existing_pt : persistent_obstacles_)
       {
           double dist = std::hypot(new_pose.position.x - existing_pt.x, 
                                    new_pose.position.y - existing_pt.y);
           // 如果新點跟舊點距離小於 7.5公分，就不存了，節省效能
           if(dist < 0.075) {
+              existing_pt.last_seen_time = now;
               is_duplicate = true;
               break;
           }
@@ -502,13 +514,35 @@ void SensorLayer::poseArrayCallback(const geometry_msgs::msg::PoseArray::SharedP
 
       // 如果是新的點，就存進去
       if(!is_duplicate) {
-          geometry_msgs::msg::Point pt;
+          ObstacleNode pt;
           pt.x = new_pose.position.x;
           pt.y = new_pose.position.y;
           pt.z = new_pose.position.z;
+          pt.last_seen_time = now;
           persistent_obstacles_.push_back(pt);
       }
   }
+}
+
+void SensorLayer::removeOutdatedObstacles()
+{
+    // std::lock_guard<std::mutex> lock(data_mutex_);
+    auto node = node_.lock();
+    if (!node) {
+        return;
+    }
+    rclcpp::Time now = node->now();
+
+    // 移除超過壽命的障礙物
+    persistent_obstacles_.erase(
+        std::remove_if(
+            persistent_obstacles_.begin(),
+            persistent_obstacles_.end(),
+            [&](const ObstacleNode& pt) {
+                double age = (now - pt.last_seen_time).seconds();
+                return age > obstacle_lifespan_;
+            }),
+        persistent_obstacles_.end());
 }
 
 void SensorLayer::updateBounds(
@@ -517,9 +551,11 @@ void SensorLayer::updateBounds(
 {
   if (!enabled_) return;
   std::lock_guard<std::mutex> lock(data_mutex_);
+
+  removeOutdatedObstacles();
   
   // 遍歷「記憶庫」中的所有點來更新邊界
-  double range = obstacle_radius_ + 0.05; // 多一點 buffer
+  double range = inflation_radius_ + 0.05; // 多一點 buffer
 
   for(const auto& pt : persistent_obstacles_) {
       *min_x = std::min(*min_x, pt.x - range);
@@ -548,7 +584,9 @@ void SensorLayer::updateCosts(
       geometry_msgs::msg::PoseStamped pose_in, pose_out;
       pose_in.header.frame_id = "map"; // 假設 SensorSim 發的是 map
       pose_in.header.stamp = rclcpp::Time(0); // 拿最新的 transform
-      pose_in.pose.position = pt_map;
+      pose_in.pose.position.x = pt_map.x;
+      pose_in.pose.position.y = pt_map.y;
+      pose_in.pose.position.z = pt_map.z;
       pose_in.pose.orientation.w = 1.0;
 
       try {
@@ -566,11 +604,11 @@ void SensorLayer::updateCosts(
       double center_y = pose_out.pose.position.y;
       
       // 計算格子範圍
-      int min_mx, min_my, max_mx, max_my;
-      double min_wx = center_x - obstacle_radius_;
-      double max_wx = center_x + obstacle_radius_;
-      double min_wy = center_y - obstacle_radius_;
-      double max_wy = center_y + obstacle_radius_;
+    //   int min_mx, min_my, max_mx, max_my;
+      double min_wx = center_x - inflation_radius_;
+      double max_wx = center_x + inflation_radius_;
+      double min_wy = center_y - inflation_radius_;
+      double max_wy = center_y + inflation_radius_;
 
       unsigned int mx_start, my_start, mx_end, my_end;
       if (!master_grid.worldToMap(min_wx, min_wy, mx_start, my_start)) mx_start = my_start = 0;
@@ -586,14 +624,46 @@ void SensorLayer::updateCosts(
       my_end = std::min((unsigned int)master_grid.getSizeInCellsY(), my_end);
 
       // 填滿
+    //   for (unsigned int my = my_start; my < my_end; ++my) {
+    //       for (unsigned int mx = mx_start; mx < mx_end; ++mx) {
+    //           double cell_wx, cell_wy;
+    //           master_grid.mapToWorld(mx, my, cell_wx, cell_wy);
+    //           double dist = std::hypot(cell_wx - center_x, cell_wy - center_y);
+
+    //           if (dist <= obstacle_radius_) {
+    //               master_grid.setCost(mx, my, LETHAL_OBSTACLE);
+    //           }
+    //       }
+    //   }
       for (unsigned int my = my_start; my < my_end; ++my) {
           for (unsigned int mx = mx_start; mx < mx_end; ++mx) {
+              
               double cell_wx, cell_wy;
               master_grid.mapToWorld(mx, my, cell_wx, cell_wy);
               double dist = std::hypot(cell_wx - center_x, cell_wy - center_y);
 
+              // 1. 致命區域 (Lethal)
               if (dist <= obstacle_radius_) {
                   master_grid.setCost(mx, my, LETHAL_OBSTACLE);
+              }
+              // 2. 膨脹區域 (Inflation Gradient)
+              else if (dist <= inflation_radius_) {
+                  // ROS Nav2 膨脹公式： cost = exp(-factor * (dist - inscribed_radius)) * 253
+                  double factor = std::exp(-1.0 * cost_scaling_factor_ * (dist - obstacle_radius_));
+                  unsigned char cost = (unsigned char)(253 * factor); // 253 是 INSCRIBED_INFLATED_OBSTACLE
+
+                  // 確保值至少為 1 (除了 FREE_SPACE=0)
+                  if(cost < 1) cost = 1;
+
+                  // === 關鍵：取最大值 (Max) ===
+                  // 如果這格原本已經是牆壁 (LETHAL)，我們不能把它變成只有 50 的 Cost
+                  // 所以要跟原本的值比大小
+                  unsigned char old_cost = master_grid.getCost(mx, my);
+                  if (old_cost == nav2_costmap_2d::NO_INFORMATION) {
+                      master_grid.setCost(mx, my, cost);
+                  } else {
+                      master_grid.setCost(mx, my, std::max(old_cost, cost));
+                  }
               }
           }
       }

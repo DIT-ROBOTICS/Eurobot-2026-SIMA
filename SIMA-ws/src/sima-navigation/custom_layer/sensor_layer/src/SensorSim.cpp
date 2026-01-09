@@ -495,11 +495,11 @@ private:
         // 2. 場景設定 (虛擬障礙物位置)
         // ==========================================
         double obs_x = 1.5;      // 障礙物中心 X
-        double obs_y = 0.7;      // 障礙物中心 Y
-        double obs_radius = 0.2; // 障礙物半徑 (實體大小)
+        double obs_y = 0.6;      // 障礙物中心 Y
+        double obs_radius = 0.3; // 障礙物半徑 (實體大小)
         
         // 感測器設定
-        double max_range = 0.3;  // 感測器最遠能看到多遠
+        double max_range = 0.4;  // 感測器最遠能看到多遠
         
         // 定義三個感測器在機器人身上的相對位置 (x, y)
         struct Sensor { std::string name; double x; double y; };

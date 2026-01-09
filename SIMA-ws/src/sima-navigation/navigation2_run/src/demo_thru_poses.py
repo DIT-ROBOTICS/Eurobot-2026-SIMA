@@ -76,9 +76,9 @@ def main():
     # 啟動 Nav2 指揮官
     navigator = BasicNavigator()
     
-    print("等待 Nav2 系統啟動...")
+    # print("等待 Nav2 系統啟動...")
     # navigator.waitUntilNav2Active()
-    print("Nav2 已就緒！")
+    # print("Nav2 已就緒！")
 
     initial_pose = create_pose(navigator, 1.0, 1.5, w=1.0) # 改成真實的出發座標
     navigator.setInitialPose(initial_pose) 
@@ -91,7 +91,7 @@ def main():
     msg = String()
     msg.data = "Diff"
     
-    print("正在切換控制器為: Diff ...")
+    print("Switching controller: Diff ...")
     # 多發幾次確保 Behavior Tree 有收到 (網路傳輸有時會掉包)
     for _ in range(5):
         controller_pub.publish(msg)
@@ -118,7 +118,7 @@ def main():
     # ==========================================
     # 4. 發送指令 (Action Call)
     # ==========================================
-    print(f"開始多點導航，共 {len(waypoints)} 個點...")
+    print(f"start nav through poses, total: {len(waypoints)} points...")
     navigator.goThroughPoses(waypoints)
 
     # ==========================================
@@ -130,7 +130,7 @@ def main():
         i = i + 1
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
-            print(f'距離下一個點還有: {feedback.distance_remaining:.2f} 公尺')
+            print(f'Distance to next point: {feedback.distance_remaining:.2f} meters')
             
             # [進階技巧]
             # 如果你在這裡發現 feedback.distance_remaining 很久沒變
@@ -141,12 +141,11 @@ def main():
     # ==========================================
     result = navigator.getResult()
     if result == TaskResult.SUCCEEDED:
-        print('導航成功！任務完成。')
+        print('Navigation succeeded!')
     elif result == TaskResult.CANCELED:
-        print('導航被取消。')
+        print('Navigation was canceled.')
     elif result == TaskResult.FAILED:
-        print('導航失敗！')
-
+        print('Navigation failed!')
     selector_node.destroy_node()
     rclpy.shutdown()
 
