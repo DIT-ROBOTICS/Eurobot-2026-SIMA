@@ -101,6 +101,7 @@ USER ${USERNAME}
 WORKDIR /home/${USERNAME}
 COPY ./settings/.bashrc /home/${USERNAME}/.bashrc 
 COPY ./settings/tf2_sensor_msgs.hpp /opt/ros/$ROS_DISTRO/include/tf2_sensor_msgs/tf2_sensor_msgs.hpp
+COPY ./settings/cyclonedds.xml /home/${USERNAME}/cyclonedds.xml
 
 
 RUN sudo apt autoremove -y && \
