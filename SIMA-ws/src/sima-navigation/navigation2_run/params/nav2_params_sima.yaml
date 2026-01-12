@@ -137,6 +137,7 @@ controller_server:
       heading_slowdown_threshold: 0.3 # rad, about 17 degrees
       heading_kp: 2.5
       min_turing_linear_vel: 0.05
+      # allow_unknown: True
 
 local_costmap:
   local_costmap:
@@ -150,20 +151,23 @@ local_costmap:
       height: 2
       resolution: 0.01
       robot_radius: 0.075
+      # unknown_cost_value: 0
       # plugins: ["static_layer", "sensor_layer", "inflation_layer"]
-      plugins: ["static_layer", "inflation_layer"]
+      # plugins: ["static_layer", "inflation_layer"]
+      plugins: ["static_layer"]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True      
-      sensor_layer:
-        plugin: "Sensor_costmap_plugin::SensorLayer"
-        enabled: True
-        obstacle_radius: 0.01
-        inflation_radius: 0.5
-      inflation_layer:
-        plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 5.0
-        inflation_radius: 0.2
+        enabled: False
+      # sensor_layer:
+      #   plugin: "Sensor_costmap_plugin::SensorLayer"
+      #   enabled: True
+      #   obstacle_radius: 0.01
+      #   inflation_radius: 0.5
+      # inflation_layer:
+      #   plugin: "nav2_costmap_2d::InflationLayer"
+      #   cost_scaling_factor: 5.0
+      #   inflation_radius: 0.2
 
       always_send_full_costmap: True
 
