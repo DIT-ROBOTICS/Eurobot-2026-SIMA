@@ -123,6 +123,14 @@ struct ObstacleNode
     rclcpp::Time last_seen_time;
 };
 
+struct IgnoreZone
+{
+    double min_x;
+    double min_y;
+    double max_x;
+    double max_y;
+};
+
 
 class SensorLayer : public nav2_costmap_2d::Layer
 {
@@ -145,6 +153,16 @@ public:
 
 private:
   void poseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg);
+
+  bool isInsideAnyIgnoreZone(double x, double y);
+
+  void parseIgnoreZones(const std::vector<double>& params);
+
+  rcl_interfaces::msg::SetParametersResult dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+
+  std::vector<IgnoreZone> ignore_zones_list_;
+
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr dyn_params_handler_;
 
   void removeOutdatedObstacles();
 

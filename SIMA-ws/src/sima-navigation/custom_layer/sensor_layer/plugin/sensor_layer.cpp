@@ -458,17 +458,78 @@ void SensorLayer::onInitialize()
   node->declare_parameter(name_ + ".inflation_radius", 0.2); 
   node->declare_parameter(name_ + ".cost_scaling_factor", 5.0);
   node->declare_parameter(name_ + ".obstacle_lifespan", 5.0);
+  node->declare_parameter(name_ + ".ignore_zone_array", std::vector<double>{});
   
   node->get_parameter(name_ + ".obstacle_radius", obstacle_radius_);
   node->get_parameter(name_ + ".inflation_radius", inflation_radius_);
   node->get_parameter(name_ + ".cost_scaling_factor", cost_scaling_factor_);
   node->get_parameter(name_ + ".obstacle_lifespan", obstacle_lifespan_);
 
+  std::vector<double> ignore_zones_raw;
+  node->get_parameter(name_ + ".ignore_zone_array", ignore_zones_raw);
+  parseIgnoreZones(ignore_zones_raw);
+
+  // 3. 設定動態參數回調 (這樣你修改 yaml 後不用重啟，或者可以用 rqt_reconfigure 修改)
+  dyn_params_handler_ = node->add_on_set_parameters_callback(std::bind(&SensorLayer::dynamicParametersCallback, this, std::placeholders::_1));
+
   sub_ = node->create_subscription<geometry_msgs::msg::PoseArray>(
     "/sensors/detected_obstacles", 10,
     std::bind(&SensorLayer::poseArrayCallback, this, std::placeholders::_1));
     
   RCLCPP_INFO(node->get_logger(), "SensorLayer (Persistent Mode) Initialized!");
+}
+
+void SensorLayer::parseIgnoreZones(const std::vector<double>& params)
+{
+    ignore_zones_list_.clear();
+    
+    // 檢查是不是 4 的倍數
+    if (params.size() % 4 != 0) {
+        RCLCPP_ERROR(node_.lock()->get_logger(), 
+            "ignore_zones parameter size is %ld, which is not divisible by 4! Ignoring.", params.size());
+        return;
+    }
+
+    for (size_t i = 0; i < params.size(); i += 4) {
+        IgnoreZone zone;
+        // 自動處理 min/max 順序，防止使用者填反
+        zone.min_x = std::min(params[i], params[i+2]);
+        zone.min_y = std::min(params[i+1], params[i+3]);
+        zone.max_x = std::max(params[i+2], params[i]);
+        zone.max_y = std::max(params[i+3], params[i+1]);
+        ignore_zones_list_.push_back(zone);
+    }
+}
+
+bool SensorLayer::isInsideAnyIgnoreZone(double x, double y)
+{
+    for (const auto& zone : ignore_zones_list_) {
+        if (x >= zone.min_x && x <= zone.max_x &&
+            y >= zone.min_y && y <= zone.max_y) {
+            return true;
+        }
+    }
+    return false;
+}
+
+rcl_interfaces::msg::SetParametersResult SensorLayer::dynamicParametersCallback(
+  std::vector<rclcpp::Parameter> parameters)
+{
+  rcl_interfaces::msg::SetParametersResult result;
+  std::lock_guard<std::mutex> lock(data_mutex_);
+
+  for (const auto & param : parameters) {
+    if (param.get_name() == name_ + ".ignore_zones") {
+      if (param.get_type() == rclcpp::ParameterType::PARAMETER_DOUBLE_ARRAY) {
+        parseIgnoreZones(param.as_double_array());
+        RCLCPP_INFO(node_.lock()->get_logger(), "Updated ignore zones: count = %ld", ignore_zones_list_.size());
+      }
+    }
+    // ... 其他參數更新 ...
+  }
+
+  result.successful = true;
+  return result;
 }
 
 // 當有人呼叫 /clear_costmaps 時會觸發這個
@@ -488,6 +549,10 @@ void SensorLayer::poseArrayCallback(const geometry_msgs::msg::PoseArray::SharedP
   // 建議：為了讓障礙物「固定在世界上」，這裡我們假設 SensorSim 發送的是 "map" frame 的座標
   // 我們直接存下來即可。
 
+  // 注意：這裡假設 PoseArray 的 frame_id 與 ignore_zones 定義的座標系一致 (通常是 "map")
+  // 如果 msg 是 "base_link"，而 ignore_zones 是 "map"，這裡會有座標系錯誤的問題。
+  // 建議：發送端 (Bridge Node) 最好直接轉換成 "map" 再發過來，或者這層要負責轉 TF。
+
   auto node = node_.lock();
   if (!node) {
       return;
@@ -496,6 +561,10 @@ void SensorLayer::poseArrayCallback(const geometry_msgs::msg::PoseArray::SharedP
   
   for(const auto& new_pose : msg->poses)
   {
+      if (isInsideAnyIgnoreZone(new_pose.position.x, new_pose.position.y)) {
+          continue; // 忽略此點
+      }
+
       bool is_duplicate = false;
       
       // === 簡單的空間過濾 ===
