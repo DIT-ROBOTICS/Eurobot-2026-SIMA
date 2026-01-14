@@ -165,6 +165,14 @@ def generate_launch_description():
         output='screen'
     )
 
+    vl53_bridge_cmd = Node(
+        package='navigation2_run',
+        executable='vl53_bridge',
+        name='vl53_bridge',
+        output='screen',
+        parameters=[{'trigger_distance': 0.5}]
+    )
+
     # Create the launch description and populate
     ld = LaunchDescription()
 
@@ -189,6 +197,7 @@ def generate_launch_description():
     # Add the actions to launch all of the navigation nodes
     ld.add_action(rviz_cmd)       # remove if it is in RPI
     ld.add_action(bringup_cmd)
+    ld.add_action(vl53_bridge_cmd)
 
     # Add the system check node
     ld.add_action(system_check_cmd)

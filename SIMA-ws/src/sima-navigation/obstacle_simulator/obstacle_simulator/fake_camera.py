@@ -109,7 +109,7 @@ class FakeCamera(Node):
         all_points = []
 
         # --- 1. 建立第一個障礙物：在 (2.0, 0.5) 的 30cm 箱子 ---
-        box1 = self.create_square_obstacle(1.0, 0.7, 0.1)
+        box1 = self.create_square_obstacle(1.5, 0.5, 0.1)
         all_points.extend(box1)
 
         # --- 2. 建立第二個障礙物：在 (2.0, -0.5) 的 20cm 箱子 ---
