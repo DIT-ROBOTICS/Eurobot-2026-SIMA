@@ -9,19 +9,19 @@ namespace sima_mission
 
 SimaNavigator::SimaNavigator() : Node("sima_navigator")
 {
-    // 1. 初始化通訊
+    // 1. Initialize Subscriptions and Publications
     // Trigger topic: "ros2 topic pub /start_sima std_msgs/msg/Bool '{data: true}' -1"
     start_sub_ = this->create_subscription<std_msgs::msg::Bool>(
         "/start_sima", 10, std::bind(&SimaNavigator::startCallback, this, std::placeholders::_1));
 
-    // 訂閱 Global Costmap
+    // Subscribe to Global Costmap
     rclcpp::QoS map_qos(1);
     map_qos.transient_local();
     map_qos.reliable();
     costmap_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>(
         "/global_costmap/costmap", map_qos, std::bind(&SimaNavigator::costmapCallback, this, std::placeholders::_1));
 
-    // 發送 Controller 切換訊號
+    // Publish Controller switch signal
     controller_pub_ = this->create_publisher<std_msgs::msg::String>("/controller_type_thru", map_qos);
 
     // Nav2 Action Client
@@ -50,16 +50,16 @@ void SimaNavigator::executeMission()
 {
     is_navigating_ = true;
 
-    // 1. 切換 Controller
+    // 1. Switch Controller
     auto ctrl_msg = std_msgs::msg::String();
     ctrl_msg.data = "Diff";
     controller_pub_->publish(ctrl_msg);
-    // 多發幾次確保收到 (簡單粗暴但有效)
+    // Publish multiple times to ensure reception (simple but effective)
     rclcpp::sleep_for(100ms);
     controller_pub_->publish(ctrl_msg);
     RCLCPP_INFO(this->get_logger(), "Controller switched to Diff");
 
-    // 2. 檢查地圖是否存在
+    // 2. Check if costmap exists
     {
         std::lock_guard<std::mutex> lock(map_mutex_);
         if (!latest_costmap_) {
@@ -69,39 +69,50 @@ void SimaNavigator::executeMission()
         }
     }
 
-    // 3. 定義原始 Waypoints (硬編碼或從 Parameter 讀取)
+    // 3. Define Waypoints (hardcoded or read from Parameter)       ->    TODO: change to parameter
     std::vector<std::pair<double, double>> raw_points = {
-        {1.0, 0.7},
+        {1.5, 0.5},
         {2.0, 0.7},
         {2.39, 0.5}
     };
 
-    // 4. 安全檢查與路徑生成
+    // 4. Safety Check and Path Generation
     auto goal_msg = NavThroughPoses::Goal();
     goal_msg.poses.clear();
 
     RCLCPP_INFO(this->get_logger(), "Checking waypoints against costmap...");
 
     for (const auto& pt : raw_points) {
-        // 使用螺旋搜尋找安全點
-        auto safe_pose = findNearestSafePoint(pt.first, pt.second);
-        goal_msg.poses.push_back(safe_pose);
+        // Use spiral search to find a safe point
+        auto safe_pose_opt = findNearestSafePoint(pt.first, pt.second);
+
+        if (safe_pose_opt.has_value()) {
+            goal_msg.poses.push_back(safe_pose_opt.value());
+        } else {
+            RCLCPP_WARN(this->get_logger(), "Skipping waypoint (%.2f, %.2f) because no safe point was found nearby!", pt.first, pt.second);
+        }
     }
 
-    // Debug: 列出最終路徑點
+    if (goal_msg.poses.empty()) {
+        // Increase searching radius for final waypoint(goal point)
+        auto goal_pose = findNearestSafePoint(raw_points.back().first, raw_points.back().second, 1.5);
+        goal_msg.poses.push_back(goal_pose.value());
+    }
+
+    // Debug: List final waypoints
     RCLCPP_INFO(this->get_logger(), "Final waypoints sent to Nav2:");
     for (const auto& pose : goal_msg.poses) {
         RCLCPP_INFO(this->get_logger(), " -> (%.2f, %.2f)", pose.pose.position.x, pose.pose.position.y);
     }
 
-    // 5. 等待 Action Server
+    // 5. Wait for Action Server
     if (!nav_client_->wait_for_action_server(std::chrono::seconds(5))) {
         RCLCPP_ERROR(this->get_logger(), "Nav2 Action Server not available!");
         is_navigating_ = false;
         return;
     }
 
-    // 6. 發送任務
+    // 6. Send waypoints to Nav2
     RCLCPP_INFO(this->get_logger(), "Sending safe waypoints to Nav2...");
     
     auto send_goal_options = rclcpp_action::Client<NavThroughPoses>::SendGoalOptions();
@@ -115,7 +126,7 @@ void SimaNavigator::executeMission()
     nav_client_->async_send_goal(goal_msg, send_goal_options);
 }
 
-geometry_msgs::msg::PoseStamped SimaNavigator::findNearestSafePoint(double wx, double wy, double search_r_m)
+std::optional<geometry_msgs::msg::PoseStamped> SimaNavigator::findNearestSafePoint(double wx, double wy, double search_r_m)
 {
     geometry_msgs::msg::PoseStamped pose;
     pose.header.frame_id = "map";
@@ -130,11 +141,11 @@ geometry_msgs::msg::PoseStamped SimaNavigator::findNearestSafePoint(double wx, d
     int width = latest_costmap_->info.width;
     int height = latest_costmap_->info.height;
     
-    // 檢查目標點 Cost
+    // Check waypoint Cost
     int index = my * width + mx;
     int8_t cost = latest_costmap_->data[index];
 
-    // 如果安全 (Cost < 50 且不為 -1/未知)
+    // If safe (Cost < 50 and not -1/unknown)
     if (cost >= 0 && cost < 50) {
         pose.pose.position.x = wx;
         pose.pose.position.y = wy;
@@ -143,13 +154,13 @@ geometry_msgs::msg::PoseStamped SimaNavigator::findNearestSafePoint(double wx, d
 
     RCLCPP_WARN(this->get_logger(), "Point (%.2f, %.2f) is unsafe (Cost: %d). Searching nearby...", wx, wy, cost);
 
-    // 螺旋搜尋
+    // Spiral Search for nearest safe point
     int search_radius_cells = static_cast<int>(search_r_m / latest_costmap_->info.resolution);
 
     for (int r = 1; r < search_radius_cells; ++r) {
         for (int dx = -r; dx <= r; ++dx) {
             for (int dy = -r; dy <= r; ++dy) {
-                // 只檢查邊緣
+                // Only check the perimeter of the square ring
                 if (std::abs(dx) != r && std::abs(dy) != r) continue;
 
                 int check_x = mx + dx;
@@ -159,7 +170,7 @@ geometry_msgs::msg::PoseStamped SimaNavigator::findNearestSafePoint(double wx, d
                     int idx = check_y * width + check_x;
                     int8_t c = latest_costmap_->data[idx];
                     
-                    // 找到絕對安全點 (Cost == 0)
+                    // Found absolutely safe point (Cost == 0)
                     if (c == 0) {
                         double safe_wx, safe_wy;
                         mapToWorld(check_x, check_y, safe_wx, safe_wy);
@@ -173,11 +184,9 @@ geometry_msgs::msg::PoseStamped SimaNavigator::findNearestSafePoint(double wx, d
         }
     }
 
-    // 找不到就回傳原點 (交給 Nav2 Recovery 處理)
-    RCLCPP_ERROR(this->get_logger(), "Could not find safe point nearby!");
-    pose.pose.position.x = wx;
-    pose.pose.position.y = wy;
-    return pose;
+    // If not found, then delete waypoiint
+    RCLCPP_ERROR(this->get_logger(), "Could not find safe point nearby (%.2f, %.2f) within range %.2fm!", wx, wy, search_r_m);
+    return std::nullopt; 
 }
 
 void SimaNavigator::worldToMap(double wx, double wy, int& mx, int& my)
@@ -210,10 +219,10 @@ void SimaNavigator::goalResponseCallback(const GoalHandleNav::SharedPtr & goal_h
 
 void SimaNavigator::feedbackCallback(GoalHandleNav::SharedPtr, const std::shared_ptr<const NavThroughPoses::Feedback> feedback)
 {
-    // 這裡可以做進階監控 (例如每幾秒檢查前方路徑是否又被擋住)
-    // 目前先簡單印出距離
+    // Advanced monitoring can be done here (e.g., check if the path ahead is blocked every few seconds)
+    // Currently, just print the remaining distance
     static int log_counter = 0;
-    if (log_counter++ % 20 == 0) { // 降低 log 頻率
+    if (log_counter++ % 20 == 0) { // Reduce log frequency
         RCLCPP_INFO(this->get_logger(), "Distance remaining: %.2f", feedback->distance_remaining);
     }
 }

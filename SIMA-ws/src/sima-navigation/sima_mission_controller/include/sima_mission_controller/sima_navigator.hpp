@@ -10,6 +10,7 @@
 #include "std_msgs/msg/bool.hpp"
 #include <vector>
 #include <mutex>
+#include <optional>
 
 namespace sima_mission
 {
@@ -29,7 +30,7 @@ private:
     
     // Logic
     void executeMission();
-    geometry_msgs::msg::PoseStamped findNearestSafePoint(double wx, double wy, double search_r_m = 0.8);
+    std::optional<geometry_msgs::msg::PoseStamped> findNearestSafePoint(double wx, double wy, double search_r_m = 0.8);
     void worldToMap(double wx, double wy, int& mx, int& my);
     void mapToWorld(int mx, int my, double& wx, double& wy);
     
