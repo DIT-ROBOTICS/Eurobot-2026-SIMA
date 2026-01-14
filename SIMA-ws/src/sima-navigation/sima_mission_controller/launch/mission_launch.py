@@ -9,7 +9,7 @@ def generate_launch_description():
             name='sima_navigator_node',
             output='screen',
             parameters=[
-                # 如果未來想把 Waypoints 變成參數，可以加在這裡
+                # If you want to make waypoints as parameters in the future, you can add them here
                 # {'waypoints_x': [1.0, 2.0]},
             ]
         )
