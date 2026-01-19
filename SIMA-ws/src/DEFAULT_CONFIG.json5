@@ -23,7 +23,7 @@
       ////               Note that this also applies to topics with absolute path such as "/rosout", "/tf" and "/tf_static".
       ////            Default: "/"
       ////
-      namespace: "/test",
+      namespace: "/bot1",
 
       ////
       //// domain: The DDS Domain ID. By default set to 0, or to "$ROS_DOMAIN_ID" is this environment variable is defined.
@@ -34,7 +34,7 @@
       //// ros_localhost_only: If set to true, the DDS discovery and traffic will occur only on the localhost interface (127.0.0.1).
       ////                     By default set to false, unless the "ROS_LOCALHOST_ONLY=1" environment variable is defined.
       ////
-      // ros_localhost_only: true,
+      ros_localhost_only: true,
 
       ////
       //// ros_automatic_discovery_range: controls how far ROS nodes will try to discover each other.
@@ -75,11 +75,11 @@
       ////               Use 'deny' to allow all except the specified interfaces. If an interface type is set to an empty list
       ////               or is not specified at all, it means that ALL such interface are allowed.
       allow: {
-        publishers: ["/tf", "/tf_static"],
-        subscribers: [".*/cmd_vel"],
-        service_servers: [".*/.*_parameters"],
+        publishers: ["/pose/global"],
+        subscribers: [".*/pose/global"],
+        service_servers: [],
         service_clients: [],
-        action_servers: [".*/rotate_absolute"],
+        action_servers: [],
         action_clients: [],
       },
       // deny: {
@@ -213,6 +213,7 @@
   connect: {
     endpoints: [
       // "<proto>/<ip>:<port>"
+      // "tcp/192.168.50.165:7447",
     ]
   },
 
@@ -226,13 +227,13 @@
   //  endpoints: [
   //    // "<proto>/<ip>:<port>"
   //  ]
-  //},
+  // },
 
   ////
   //// Configure the scouting mechanisms and their behaviours
   ////
-  //scouting: {
-  //  /// The UDP multicast scouting configuration.
+  scouting: {
+   /// The UDP multicast scouting configuration.
   //  multicast: {
   //    /// Whether multicast scouting is enabled or not
   //    enabled: true,
@@ -248,20 +249,20 @@
   //    listen: true,
   //  },
   //  /// The gossip scouting configuration.
-  //  gossip: {
-  //    /// Whether gossip scouting is enabled or not
-  //    enabled: true,
-  //    /// When true, gossip scouting information is propagated multiple hops to all nodes in the local network.
-  //    /// When false, gossip scouting information is only propagated to the next hop.
-  //    /// Activating multihop gossip implies more scouting traffic and a lower scalability.
-  //    /// It mostly makes sense when using "linkstate" routing mode where all nodes in the subsystem don't have
-  //    /// direct connectivity with each other.
-  //    multihop: false,
-  //    /// Which type of Zenoh instances to automatically establish sessions with upon discovery on gossip.
-  //    /// Accepts a single value or different values for router, peer and client.
-  //    /// Each value is an array containing values "peer", "router" and "client".
-  //    autoconnect: { router: [], peer: ["router","peer"] },
-  //  },
-  //},
+   gossip: {
+     /// Whether gossip scouting is enabled or not
+     enabled: true,
+     /// When true, gossip scouting information is propagated multiple hops to all nodes in the local network.
+     /// When false, gossip scouting information is only propagated to the next hop.
+     /// Activating multihop gossip implies more scouting traffic and a lower scalability.
+     /// It mostly makes sense when using "linkstate" routing mode where all nodes in the subsystem don't have
+     /// direct connectivity with each other.
+     multihop: false,
+     /// Which type of Zenoh instances to automatically establish sessions with upon discovery on gossip.
+     /// Accepts a single value or different values for router, peer and client.
+     /// Each value is an array containing values "peer", "router" and "client".
+     autoconnect: { router: [], peer: ["router","peer"] },
+   },
+  },
 
 }
