@@ -79,11 +79,12 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     ros-$ROS_DISTRO-rmw-cyclonedds-cpp && \
     rm -rf /var/lib/apt/lists/*
 
-# install ros2 robot_localization
+# install ros2 useful packages
 RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     apt-get update && \
     apt-get install -y \
     ros-$ROS_DISTRO-robot-localization && \
+    ros-$ROS_DISTRO-domain-bridge && \
     rm -rf /var/lib/apt/lists/*
 
 # Install zenoh-bridge-ros2dds
