@@ -28,12 +28,14 @@ def generate_launch_description():
     log_level = LaunchConfiguration('log_level')
     use_odometry_sim = LaunchConfiguration('use_odometry_sim')
     robot_pose_remap = LaunchConfiguration('robot_pose_remap')
+    container_name = LaunchConfiguration('container_name')
 
     lifecycle_nodes = ['map_server']
 
     # Remappings
-    remappings = [('/tf', 'tf'),
-                  ('/tf_static', 'tf_static'),
+    remappings = [
+                #   ('/tf', 'tf'),
+                #   ('/tf_static', 'tf_static'),
                   ('/odom/wheel', robot_pose_remap)]
 
     # Parameter substitution
@@ -74,6 +76,8 @@ def generate_launch_description():
         'use_respawn', default_value='False', description='Whether to respawn if a node crashes.')
     declare_log_level_cmd = DeclareLaunchArgument(
         'log_level', default_value='info', description='Log level')
+    declare_use_odometry_sim_cmd = DeclareLaunchArgument(
+        'use_odometry_sim', default_value='False', description='Whether to start odometry simulation')
 
     # Load static transform & odometry simulation
     # localization_sim = GroupAction(
@@ -116,15 +120,21 @@ def generate_launch_description():
     #                             'use_respawn': use_respawn}.items()),
     # ])
 
-    # for gazebo simulation, we just publish a static transform from map to odom
-    fake_localization_tf = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='map_to_odom_static_publisher',
-        arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom'],
-        parameters=[{'use_sim_time': use_sim_time}],
-        output='screen'
-    )
+    # for one sima gazebo simulation, we just publish a static transform from map to odom
+    # fake_localization_tf = Node(
+    #     package='tf2_ros',
+    #     executable='static_transform_publisher',
+    #     name='map_to_odom_static_publisher',
+    #     arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom'],
+    #     parameters=[{'use_sim_time': use_sim_time}],
+    #     output='screen'
+    # )
+
+
+    container_name_full = PythonExpression([
+        '"', LaunchConfiguration('namespace'), '/"', '+', 'str("', LaunchConfiguration('container_name'), '")'
+        if LaunchConfiguration('namespace') != '' else LaunchConfiguration('container_name')
+    ])
 
 
     # Load nodes group
@@ -156,7 +166,8 @@ def generate_launch_description():
     # Load composable nodes
     load_composable_nodes = LoadComposableNodes(
         condition=IfCondition(use_composition),
-        target_container=LaunchConfiguration('container_name'),
+        # target_container=LaunchConfiguration('container_name'),
+        target_container=container_name_full,
         composable_node_descriptions=[
             ComposableNode(
                 package='nav2_map_server',
@@ -196,6 +207,6 @@ def generate_launch_description():
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)
     # ld.add_action(brinup_localization_cmd_group)      # for localization sim
-    ld.add_action(fake_localization_tf)               # for gazebo simulation
+    # ld.add_action(fake_localization_tf)               # for one sima gazebo simulation
 
     return ld

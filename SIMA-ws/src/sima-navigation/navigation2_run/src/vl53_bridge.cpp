@@ -19,8 +19,10 @@ VL53Bridge::VL53Bridge() : Node("vl53_bridge_node")
     rclcpp::QoS qos_sensor(10);
     qos_sensor.best_effort();
     
+    // Use relative paths so topics respect the node's namespace
+    // When node is in /robot1, this becomes /robot1/sensors/raw_ranges
     sub_raw_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
-        "/sensors/raw_ranges", qos_sensor, 
+        "sensors/raw_ranges", qos_sensor, 
         std::bind(&VL53Bridge::rawDataCallback, this, std::placeholders::_1));
 
     pub_obstacles_ = this->create_publisher<geometry_msgs::msg::PoseArray>(
@@ -39,9 +41,15 @@ void VL53Bridge::loadParameters()
         {"Right",  0.075, -0.075, deg2rad(-45.0)}
     };
 
-    // TODO: read param file to override default sensor configs
+    // Parameters
     this->declare_parameter("trigger_distance", 0.5);
     this->get_parameter("trigger_distance", trigger_distance_);
+    
+    // Frame IDs for multi-robot support
+    this->declare_parameter("robot_base_frame", "base_link");
+    this->declare_parameter("global_frame", "map");
+    this->get_parameter("robot_base_frame", robot_base_frame_);
+    this->get_parameter("global_frame", global_frame_);
 }
 
 void VL53Bridge::rawDataCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg)
@@ -57,14 +65,15 @@ void VL53Bridge::rawDataCallback(const std_msgs::msg::Float32MultiArray::SharedP
     // 2. ready output message
     geometry_msgs::msg::PoseArray output_msg;
     output_msg.header.stamp = this->now();
-    output_msg.header.frame_id = "map"; // transform to map frame
+    output_msg.header.frame_id = global_frame_; // transform to global frame
 
     // 3. check if TF is available
     // We need to transform points from base_link to map
     // Here we don't query Transform, but directly use tf_buffer->transform() function
-    if (!tf_buffer_->canTransform("map", "base_link", tf2::TimePointZero)) {
+    if (!tf_buffer_->canTransform(global_frame_, robot_base_frame_, tf2::TimePointZero)) {
         RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 5000, 
-            "Waiting for TF (map -> base_link)... Cannot publish obstacles.");
+            "Waiting for TF (%s -> %s)... Cannot publish obstacles.", 
+            global_frame_.c_str(), robot_base_frame_.c_str());
         return;
     }
 
@@ -85,7 +94,7 @@ void VL53Bridge::rawDataCallback(const std_msgs::msg::Float32MultiArray::SharedP
 
             // B. create PointStamped (to let TF know this point is in base_link)
             geometry_msgs::msg::PointStamped point_in_base, point_in_map;
-            point_in_base.header.frame_id = "base_link";
+            point_in_base.header.frame_id = robot_base_frame_;
             point_in_base.header.stamp = rclcpp::Time(0); // latest time
             point_in_base.point.x = local_x;
             point_in_base.point.y = local_y;
@@ -94,7 +103,7 @@ void VL53Bridge::rawDataCallback(const std_msgs::msg::Float32MultiArray::SharedP
             try {
                 // C. perform coordinate transformation (base_link -> map)
                 // This line automatically handles the robot's position and orientation
-                point_in_map = tf_buffer_->transform(point_in_base, "map");
+                point_in_map = tf_buffer_->transform(point_in_base, global_frame_);
 
                 // D. add to output list
                 geometry_msgs::msg::Pose pose_map;

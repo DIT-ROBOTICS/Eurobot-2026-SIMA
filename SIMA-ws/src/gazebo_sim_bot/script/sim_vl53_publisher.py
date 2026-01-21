@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import LaserScan  # <--- 改用 LaserScan
+from sensor_msgs.msg import LaserScan  
 from std_msgs.msg import Float32MultiArray
 from rclpy.qos import qos_profile_sensor_data # 必須使用這組 QoS
 
@@ -11,18 +11,19 @@ class SimVL53Publisher(Node):
         
         # 1. 訂閱 Gazebo 的 LaserScan Topic
         # 注意：這裡使用 qos_profile_sensor_data 是為了配合 Gazebo 的 Best Effort 發布
-        self.create_subscription(LaserScan, '/sim/vl53_left', self.cb_left, qos_profile_sensor_data)
-        self.create_subscription(LaserScan, '/sim/vl53_center', self.cb_center, qos_profile_sensor_data)
-        self.create_subscription(LaserScan, '/sim/vl53_right', self.cb_right, qos_profile_sensor_data)
+        # When Node is pushed into /robot1 namespace, it will automatically become /robot1/sim/vl53_left
+        self.create_subscription(LaserScan, 'sim/vl53_left', self.cb_left, qos_profile_sensor_data)
+        self.create_subscription(LaserScan, 'sim/vl53_center', self.cb_center, qos_profile_sensor_data)
+        self.create_subscription(LaserScan, 'sim/vl53_right', self.cb_right, qos_profile_sensor_data)
         
         # 2. 發布給 Bridge 的陣列
-        self.pub = self.create_publisher(Float32MultiArray, '/sensors/raw_ranges', 10)
+        self.pub = self.create_publisher(Float32MultiArray, 'sensors/raw_ranges', 10)
         
         # 預設值給 4.0 (代表沒障礙物)
         self.ranges = [4.0, 4.0, 4.0] 
         
         self.timer = self.create_timer(0.05, self.timer_callback)
-        self.get_logger().info("Sim VL53 Adapter (LaserScan Mode) Started.")
+        self.get_logger().info(f"Sim VL53 Adapter (LaserScan Mode) Started. Namespace: {self.get_namespace()}")
 
     # 回呼函式：處理 LaserScan
     def cb_left(self, msg): 

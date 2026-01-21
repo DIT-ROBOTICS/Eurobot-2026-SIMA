@@ -29,6 +29,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'sim_vl53_publisher.py = script.sim_vl53_publisher:main',
         ],
     },
 )

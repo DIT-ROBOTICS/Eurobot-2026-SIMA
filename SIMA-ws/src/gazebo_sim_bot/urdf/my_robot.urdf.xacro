@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <robot name="sima_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
+  <xacro:arg name="robot_name" default=""/>
+  <xacro:property name="prefix" value="$(arg robot_name)"/>
+
   <material name="blue">
     <color rgba="0 0 0.8 1"/>
   </material>
@@ -14,15 +17,15 @@
     <color rgba="1 0 0 1"/>
   </material>
 
-  <link name="base_footprint"/>
+  <link name="${prefix}base_footprint"/>
 
-  <joint name="base_joint" type="fixed">
-    <parent link="base_footprint"/>
-    <child link="base_link"/>
+  <joint name="${prefix}base_joint" type="fixed">
+    <parent link="${prefix}base_footprint"/>
+    <child link="${prefix}base_link"/>
     <origin xyz="0 0 0.105" rpy="0 0 0"/> 
   </joint>
 
-  <link name="base_link">
+  <link name="${prefix}base_link">
     <visual>
       <geometry>
         <box size="0.15 0.15 0.15"/>
@@ -40,7 +43,7 @@
     </inertial>
   </link>
 
-  <link name="left_wheel">
+  <link name="${prefix}left_wheel">
     <visual>
       <geometry>
         <cylinder radius="0.03" length="0.02"/> 
@@ -58,14 +61,14 @@
     </inertial>
   </link>
 
-  <joint name="left_wheel_joint" type="continuous">
-    <parent link="base_link"/>
-    <child link="left_wheel"/>
+  <joint name="${prefix}left_wheel_joint" type="continuous">
+    <parent link="${prefix}base_link"/>
+    <child link="${prefix}left_wheel"/>
     <origin xyz="0 0.085 -0.075" rpy="-1.57 0 0"/> 
     <axis xyz="0 0 1"/>
   </joint>
 
-  <link name="right_wheel">
+  <link name="${prefix}right_wheel">
     <visual>
       <geometry>
         <cylinder radius="0.03" length="0.02"/>
@@ -83,14 +86,14 @@
     </inertial>
   </link>
 
-  <joint name="right_wheel_joint" type="continuous">
-    <parent link="base_link"/>
-    <child link="right_wheel"/>
+  <joint name="${prefix}right_wheel_joint" type="continuous">
+    <parent link="${prefix}base_link"/>
+    <child link="${prefix}right_wheel"/>
     <origin xyz="0 -0.085 -0.075" rpy="-1.57 0 0"/>
     <axis xyz="0 0 1"/>
   </joint>
 
-  <link name="front_caster">
+  <link name="${prefix}front_caster">
     <visual>
       <geometry>
         <sphere radius="0.015"/>
@@ -108,13 +111,13 @@
     </inertial>
   </link>
 
-  <joint name="front_caster_joint" type="fixed">
-    <parent link="base_link"/>
-    <child link="front_caster"/>
+  <joint name="${prefix}front_caster_joint" type="fixed">
+    <parent link="${prefix}base_link"/>
+    <child link="${prefix}front_caster"/>
     <origin xyz="0.06 0 -0.09"/> 
   </joint>
 
-  <link name="back_caster">
+  <link name="${prefix}back_caster">
     <visual>
       <geometry>
         <sphere radius="0.015"/>
@@ -132,13 +135,13 @@
     </inertial>
   </link>
 
-  <joint name="back_caster_joint" type="fixed">
-    <parent link="base_link"/>
-    <child link="back_caster"/>
+  <joint name="${prefix}back_caster_joint" type="fixed">
+    <parent link="${prefix}base_link"/>
+    <child link="${prefix}back_caster"/>
     <origin xyz="-0.06 0 -0.09"/> 
   </joint>
 
-  <gazebo reference="left_wheel">
+  <gazebo reference="${prefix}left_wheel">
     <mu1>10.0</mu1> 
     <mu2>10.0</mu2> 
     <kp>500000.0</kp> 
@@ -148,7 +151,7 @@
     <material>Gazebo/White</material>
   </gazebo>
 
-  <gazebo reference="right_wheel">
+  <gazebo reference="${prefix}right_wheel">
     <mu1>10.0</mu1>
     <mu2>10.0</mu2>
     <kp>500000.0</kp>
@@ -158,7 +161,7 @@
     <material>Gazebo/White</material>
   </gazebo>
 
-  <gazebo reference="front_caster">
+  <gazebo reference="${prefix}front_caster">
     <mu1>0.001</mu1> 
     <mu2>0.001</mu2> 
     <kp>1000000.0</kp>
@@ -168,7 +171,7 @@
     <material>Gazebo/Black</material>
   </gazebo>
 
-  <gazebo reference="back_caster">
+  <gazebo reference="${prefix}back_caster">
     <mu1>0.001</mu1>
     <mu2>0.001</mu2>
     <kp>1000000.0</kp>
@@ -179,7 +182,7 @@
   </gazebo>
 
   <xacro:macro name="vl53_sensor" params="name x y yaw color topic_name">
-    <link name="${name}_link">
+    <link name="${prefix}${name}_link">
       <visual>
         <geometry>
           <box size="0.01 0.02 0.01"/> 
@@ -197,14 +200,14 @@
       </inertial>
     </link>
 
-    <joint name="${name}_joint" type="fixed">
-      <parent link="base_link"/>
-      <child link="${name}_link"/>
+    <joint name="${prefix}${name}_joint" type="fixed">
+      <parent link="${prefix}base_link"/>
+      <child link="${prefix}${name}_link"/>
       <origin xyz="${x} ${y} 0.0" rpy="0 0 ${yaw}"/>
     </joint>
 
-    <gazebo reference="${name}_link">
-      <sensor name="${name}" type="ray">
+    <gazebo reference="${prefix}${name}_link">
+      <sensor name="${prefix}${name}" type="ray">
         <pose>0 0 0 0 0 0</pose>
         <always_on>true</always_on>
         <visualize>true</visualize> <update_rate>20</update_rate>
@@ -225,39 +228,39 @@
             <stddev>0.01</stddev> </noise>
         </ray>
         
-        <plugin name="${name}_controller" filename="libgazebo_ros_ray_sensor.so">
+        <plugin name="${prefix}${name}_controller" filename="libgazebo_ros_ray_sensor.so">
             <ros>
-                <namespace>/</namespace>
+                <namespace>${prefix}</namespace>
                 <remapping>~/out:=${topic_name}</remapping>
             </ros>
             <output_type>sensor_msgs/LaserScan</output_type> 
-            <frame_name>${name}_link</frame_name>
+            <frame_name>${prefix}${name}_link</frame_name>
             <radiation_type>infrared</radiation_type> 
         </plugin>
       </sensor>
     </gazebo>
   </xacro:macro>
 
-    <xacro:vl53_sensor name="sensor_left"   x="0.075" y="0.075"  yaw="0.785"  color="red" topic_name="/sim/vl53_left"/>
-    <xacro:vl53_sensor name="sensor_center" x="0.08"  y="0.0"    yaw="0.0"    color="red" topic_name="/sim/vl53_center"/>
-    <xacro:vl53_sensor name="sensor_right"  x="0.075" y="-0.075" yaw="-0.785" color="red" topic_name="/sim/vl53_right"/>
+    <xacro:vl53_sensor name="sensor_left"   x="0.075" y="0.075"  yaw="0.785"  color="red" topic_name="sim/vl53_left"/>
+    <xacro:vl53_sensor name="sensor_center" x="0.08"  y="0.0"    yaw="0.0"    color="red" topic_name="sim/vl53_center"/>
+    <xacro:vl53_sensor name="sensor_right"  x="0.075" y="-0.075" yaw="-0.785" color="red" topic_name="sim/vl53_right"/>
 
 
   <gazebo>
     <plugin name="diff_drive" filename="libgazebo_ros_diff_drive.so">
       <ros>
-        <namespace></namespace>
+        <!-- DO NOT set namespace here - it's handled by PushRosNamespace in launch file -->
       </ros>
-      <left_joint>left_wheel_joint</left_joint>
-      <right_joint>right_wheel_joint</right_joint>
+      <left_joint>${prefix}left_wheel_joint</left_joint>
+      <right_joint>${prefix}right_wheel_joint</right_joint>
       <wheel_separation>0.17</wheel_separation> 
       <wheel_diameter>0.06</wheel_diameter>   
       
       <publish_odom>true</publish_odom>
       <publish_odom_tf>true</publish_odom_tf>
       <publish_wheel_tf>true</publish_wheel_tf>
-      <odometry_frame>odom</odometry_frame>
-      <robot_base_frame>base_footprint</robot_base_frame>
+      <odometry_frame>${prefix}odom</odometry_frame>
+      <robot_base_frame>${prefix}base_footprint</robot_base_frame>
       <command_topic>cmd_vel</command_topic>
 
       <max_wheel_torque>20</max_wheel_torque>

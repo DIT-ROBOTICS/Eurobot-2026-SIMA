@@ -3,7 +3,8 @@ bt_navigator:
     use_sim_time: False
     global_frame: map
     robot_base_frame: base_link
-    odom_topic: /odom/wheel
+    # odom_topic: /odom/wheel
+    odom_topic: /odom
     bt_loop_duration: 10
     default_server_timeout: 20
     wait_for_service_timeout: 1000
@@ -137,7 +138,7 @@ controller_server:
       speed_decade: 0.125
       costmap_tolerance: 95 # rival is 98
       keep_planning: false
-      
+
     Slow:
       plugin: "custom_controller::CustomController"
       max_linear_vel: 0.8
@@ -149,7 +150,7 @@ controller_server:
       speed_decade: 0.125
       costmap_tolerance: 95 # rival is 98
       keep_planning: false
-    
+
     LinearBoost:
       plugin: "custom_controller::CustomController"
       max_linear_vel: 1.1
@@ -183,7 +184,7 @@ controller_server:
       min_approach_linear_vel: 0.01
       approach_dist: 0.5
       transform_tolerance: 0.1
-      heading_rotate_threshold: 0.6  # rad, about 34 degrees
+      heading_rotate_threshold: 0.6 # rad, about 34 degrees
       heading_slowdown_threshold: 0.3 # rad, about 17 degrees
       heading_kp: 2.5
       min_turing_linear_vel: 0.05
@@ -210,18 +211,18 @@ local_costmap:
       #   plugin: "nav2_costmap_2d::ObstacleLayer"
       #   enabled: True
       #   observation_sources: fake_obstacle
-        
+
       #   fake_obstacle:
       #     topic: /detected_obstacles
       #     max_obstacle_height: 2.0
-      #     clearing: True   
-      #     marking: True    
+      #     clearing: True
+      #     marking: True
       #     data_type: "PointCloud2"
       #     raytrace_max_range: 3.0
       #     raytrace_min_range: 0.0
       #     obstacle_max_range: 2.5
       #     obstacle_min_range: 0.0
-      
+
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
@@ -243,7 +244,15 @@ global_costmap:
       trinary_costmap: false
       lethal_cost_threshold: 10
       unknown_cost_value: 255
-      plugins: ["static_layer", "obstacle_layer", "inflation_layer", "rival_layer", "object_layer", "keepout_layer"]
+      plugins:
+        [
+          "static_layer",
+          "obstacle_layer",
+          "inflation_layer",
+          "rival_layer",
+          "object_layer",
+          "keepout_layer",
+        ]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
@@ -251,12 +260,12 @@ global_costmap:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
         observation_sources: fake_obstacle
-        
+
         fake_obstacle:
           topic: /detected_obstacles
           max_obstacle_height: 2.0
-          clearing: True   
-          marking: True    
+          clearing: True
+          marking: True
           data_type: "PointCloud2"
           raytrace_max_range: 3.0
           raytrace_min_range: 0.0
@@ -286,13 +295,13 @@ global_costmap:
         moving_cost_scaling_factor: 0.9
         unknown_cost_scaling_factor: 10.0
         max_extend_length: 0.6
-        cov_range_max: 0.05385164807134504  # sqrt(0.0029)
-        cov_range_min: 0.01414213562373095  # sqrt(0.0002)
+        cov_range_max: 0.05385164807134504 # sqrt(0.0029)
+        cov_range_min: 0.01414213562373095 # sqrt(0.0002)
         vel_range_max: 1.0
         vel_range_min: 0.0
         inscribed_radius_rate: 0.99
         inflation_radius_rate: 1.005
-        debug_mode: 0                       # 0: off, 1: Print rival state change only, 2: Print rival state change and statistics, 3: Print everything continuously
+        debug_mode: 0 # 0: off, 1: Print rival state change only, 2: Print rival state change and statistics, 3: Print everything continuously
         use_statistic_method: False
         offset_vel_factor_weight_statistic: 0.42
         expand_vel_factor_weight_statistic: 0.42
@@ -311,17 +320,49 @@ global_costmap:
         plugin: "keepout_costmap_plugin::KeepoutLayer"
         enabled: True
         # keepout_zone_array: [X, Y, lengthX, lengthY]
-        keepout_zone_array: [0.375, 1.775, 0.45, 0.45,  # A
-                             0.225, 0.875, 0.45, 0.45,  # B
-                             0.225, 0.075, 0.45, 0.15,  # C
-                             0.775, 0.075, 0.45, 0.15,  # D
-                             1.225, 0.225, 0.45, 0.45,  # E
-                             #----------------------------#
-                             1.775, 0.225, 0.45, 0.45,  # F
-                             2.225, 0.075, 0.45, 0.15,  # G
-                             2.775, 0.075, 0.45, 0.15,  # H
-                             2.775, 0.875, 0.45, 0.45,  # I
-                             2.625, 1.775, 0.45, 0.45,] # J 
+        keepout_zone_array: [
+            0.375,
+            1.775,
+            0.45,
+            0.45, # A
+            0.225,
+            0.875,
+            0.45,
+            0.45, # B
+            0.225,
+            0.075,
+            0.45,
+            0.15, # C
+            0.775,
+            0.075,
+            0.45,
+            0.15, # D
+            1.225,
+            0.225,
+            0.45,
+            0.45, # E
+            #----------------------------#
+            1.775,
+            0.225,
+            0.45,
+            0.45, # F
+            2.225,
+            0.075,
+            0.45,
+            0.15, # G
+            2.775,
+            0.075,
+            0.45,
+            0.15, # H
+            2.775,
+            0.875,
+            0.45,
+            0.45, # I
+            2.625,
+            1.775,
+            0.45,
+            0.45,
+          ] # J
         inflation_length: 0.2
         cost_scaling_factor: 5.0
       always_send_full_costmap: True
@@ -400,7 +441,7 @@ velocity_smoother:
     max_velocity: [1.1, 1.1, 12.0]
     min_velocity: [-1.1, -1.1, -12.0]
     max_accel: [3.3, 3.3, 120.0]
-    max_decel: [-4.4, -4.4, -120.0]  
+    max_decel: [-4.4, -4.4, -120.0]
     odom_topic: "/odom/wheel"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
@@ -422,7 +463,7 @@ docking_server:
     # Types of docks
     dock_plugins: ["dock"]
     dock:
-      plugin: 'opennav_docking::SimpleChargingDock'
+      plugin: "opennav_docking::SimpleChargingDock"
       docking_threshold: 0.005
       use_debounce: true
       xy_debounce_threshold: 2
@@ -435,12 +476,12 @@ docking_server:
       use_stall_detection: false
       base_frame: "base_footprint"
 
-    docks: ['home_dock']
+    docks: ["home_dock"]
     home_dock:
-      type: 'dock'
+      type: "dock"
       frame: map
       pose: [0.0, 0.0, 0.0]
-    
+
     # dock_database: /my/path/to/dock_database.yaml
 
     controllers: ["Ordinary", "Gentle", "Rush"]

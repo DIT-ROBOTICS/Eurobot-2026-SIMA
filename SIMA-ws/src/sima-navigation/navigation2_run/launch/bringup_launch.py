@@ -46,9 +46,13 @@ def generate_launch_description():
     use_odometry_sim = LaunchConfiguration('use_odometry_sim')
     robot_pose_remap = LaunchConfiguration('robot_pose_remap')
 
-    remappings = [('/tf', 'tf'),
-                  ('/tf_static', 'tf_static'),
-                  ('odom', robot_pose_remap)]
+    # IMPORTANT: Use absolute paths for TF topics so all robots share the same TF tree
+    remappings = [
+                  ('/tf', '/tf'),
+                  ('/tf_static', '/tf_static'),
+                #   ('odom', robot_pose_remap)
+                  ('odom', 'odom')
+                  ]
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
@@ -59,9 +63,10 @@ def generate_launch_description():
     # '<robot_namespace>' keyword shall be replaced by 'namespace' launch argument
     # in config file 'nav2_multirobot_params.yaml' as a default & example.
     # User defined config file should contain '<robot_namespace>' keyword for the replacements.
+    # IMPORTANT: Don't add '/' prefix - TF2 frame IDs cannot start with '/'
     params_file = ReplaceString(
         source_file=params_file,
-        replacements={'<robot_namespace>': ('/', namespace)},
+        replacements={'<robot_namespace>': namespace},
         condition=IfCondition(use_namespace))
 
     configured_params = ParameterFile(
@@ -114,6 +119,10 @@ def generate_launch_description():
     declare_log_level_cmd = DeclareLaunchArgument(
         'log_level', default_value='info',
         description='log level')
+
+    declare_use_odometry_sim_cmd = DeclareLaunchArgument(
+        'use_odometry_sim', default_value='False',
+        description='Whether to start odometry simulation')
     
     declare_robot_remap_cmd = DeclareLaunchArgument(
         'robot_pose_remap', default_value='odom',

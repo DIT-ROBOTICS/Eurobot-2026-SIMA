@@ -41,6 +41,10 @@ private:
     std::vector<SensorConfig> sensors_;
     double trigger_distance_ = 0.5; // less than this distance is considered an obstacle
     double min_valid_dist_ = 0.02;  // minimum valid distance (to filter noise in order to avoid affecting by itself)
+    
+    // Frame IDs for multi-robot support
+    std::string robot_base_frame_;
+    std::string global_frame_;
 };
 
 #endif // VL53_BRIDGE_HPP_
