@@ -6,7 +6,8 @@ def generate_launch_description():
         Node(
             package='sima-localization-sim',
             executable='global_sim_node',
-            name='global_sim_node'
+            name='global_sim_node',
+            namespace='bot2'
         ),
         Node(
             package='sima-localization-sim',
