@@ -30,6 +30,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     git-extras \
     gnupg2 \
     net-tools \
+    iputils-ping \
     build-essential \
     cmake \
     locales \
@@ -56,6 +57,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     libsuitesparse-dev \
     libfreeimage-dev \
     libyaml-cpp-dev \
+    ros-$ROS_DISTRO-xacro \
+    ros-$ROS_DISTRO-joint-state-publisher-gui \
     ros-$ROS_DISTRO-gazebo-ros-pkgs \
     ros-$ROS_DISTRO-tf2-sensor-msgs \
     ros-$ROS_DISTRO-libg2o \
@@ -69,7 +72,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     ros-$ROS_DISTRO-foxglove-bridge \
     ros-$ROS_DISTRO-ament-lint-auto \
     ros-$ROS_DISTRO-rmw-cyclonedds-cpp \
-    ros-$ROS_DISTRO-robot-localization && \
+    ros-$ROS_DISTRO-robot-localization \
+    ros-$ROS_DISTRO-domain-bridge && \
     rm -rf /var/lib/apt/lists/*
 
 # --- Fix Header File (Must be done as ROOT) ---

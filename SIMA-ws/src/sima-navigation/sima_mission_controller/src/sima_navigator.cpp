@@ -2,6 +2,11 @@
 #include <cmath>
 #include <chrono>
 
+#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/buffer.h"
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+
 using namespace std::chrono_literals;
 
 namespace sima_mission
@@ -9,7 +14,20 @@ namespace sima_mission
 
 SimaNavigator::SimaNavigator() : Node("sima_navigator")
 {
-    // 1. Initialize Subscriptions and Publications
+    // Initialize TF2 (TF Buffer & Listener)
+    tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+
+    // Declare Parameters
+    this->declare_parameter("start_pose_tolerance", 0.05);
+
+    this->declare_parameter("start_point_1", std::vector<double>{0.5, 0.5});
+    this->declare_parameter("start_point_2", std::vector<double>{1.0, 0.5});
+
+    this->declare_parameter("waypoints_1", std::vector<double>{1.5, 0.5, 2.0, 0.7, 2.39, 0.5});
+    this->declare_parameter("waypoints_2", std::vector<double>{1.5, -0.5, 2.0, -0.7, 2.39, -0.5}); // 範例
+
+    // Initialize Subscriptions and Publications
     // Trigger topic: "ros2 topic pub /start_sima std_msgs/msg/Bool '{data: true}' -1"
     start_sub_ = this->create_subscription<std_msgs::msg::Bool>(
         "/start_sima", 10, std::bind(&SimaNavigator::startCallback, this, std::placeholders::_1));
@@ -38,19 +56,79 @@ void SimaNavigator::costmapCallback(const nav_msgs::msg::OccupancyGrid::SharedPt
 
 void SimaNavigator::startCallback(const std_msgs::msg::Bool::SharedPtr msg)
 {
-    if (msg->data && !is_navigating_) {
-        RCLCPP_INFO(this->get_logger(), "Received START signal!");
-        executeMission();
-    } else {
-        RCLCPP_WARN(this->get_logger(), "Ignore start signal (already running or false)");
+    if (msg->data && !last_start_signal_) {
+        if (!is_navigating_) {
+            RCLCPP_INFO(this->get_logger(), "Received START signal!");
+            executeMission();
+        } else {
+            RCLCPP_WARN(this->get_logger(), "Ignore start signal (already running)");
+        }
     }
+    last_start_signal_ = msg->data;
+}
+
+std::vector<std::pair<double, double>> SimaNavigator::parseWaypoints(const std::vector<double>& flat_points){
+    std::vector<std::pair<double, double>> points;
+    if (flat_points.size() % 2 != 0) {
+        RCLCPP_ERROR(this->get_logger(), "Waypoints parameter size must be even! (x, y pairs)");
+        return points;
+    }
+    for (size_t i = 0; i < flat_points.size(); i += 2) {
+        points.push_back({flat_points[i], flat_points[i+1]});
+    }
+    return points;
 }
 
 void SimaNavigator::executeMission()
 {
     is_navigating_ = true;
 
-    // 1. Switch Controller
+    // Get Robot Current Pose
+    geometry_msgs::msg::TransformStamped t;
+    double robot_x, robot_y;
+
+    try {
+        t = tf_buffer_->lookupTransform("map", "base_link", tf2::TimePointZero);
+        robot_x = t.transform.translation.x;
+        robot_y = t.transform.translation.y;
+        RCLCPP_INFO(this->get_logger(), "Robot Current Position: (%.2f, %.2f)", robot_x, robot_y);
+    } catch (tf2::TransformException & ex) {
+        RCLCPP_ERROR(this->get_logger(), "Could not get robot pose: %s", ex.what());
+        is_navigating_ = false;
+        return;
+    }
+
+    double tolerance = this->get_parameter("start_pose_tolerance").as_double();
+    std::vector<double> ref1 = this->get_parameter("start_point_1").as_double_array();
+    std::vector<double> ref2 = this->get_parameter("start_point_2").as_double_array();
+    
+    std::vector<std::pair<double, double>> raw_points;
+
+    auto dist = [](double x1, double y1, double x2, double y2) {
+        return std::sqrt(std::pow(x1 - x2, 2) + std::pow(y1 - y2, 2));
+    };
+
+    if (dist(robot_x, robot_y, ref1[0], ref1[1]) < tolerance) {
+        RCLCPP_INFO(this->get_logger(), "Matched Start Condition 1. Loading Waypoints Set 1.");
+        raw_points = parseWaypoints(this->get_parameter("waypoints_1").as_double_array());
+    } 
+    else if (dist(robot_x, robot_y, ref2[0], ref2[1]) < tolerance) {
+        RCLCPP_INFO(this->get_logger(), "Matched Start Condition 2. Loading Waypoints Set 2.");
+        raw_points = parseWaypoints(this->get_parameter("waypoints_2").as_double_array());
+    } 
+    else {
+        RCLCPP_ERROR(this->get_logger(), "Current position is NOT within range of any known start points! Mission Aborted.");
+        is_navigating_ = false;
+        return;
+    }
+
+    if (raw_points.empty()) {
+        RCLCPP_ERROR(this->get_logger(), "Selected waypoint set is empty!");
+        is_navigating_ = false;
+        return;
+    }
+
+    // Switch Controller
     auto ctrl_msg = std_msgs::msg::String();
     ctrl_msg.data = "Diff";
     controller_pub_->publish(ctrl_msg);
@@ -59,7 +137,7 @@ void SimaNavigator::executeMission()
     controller_pub_->publish(ctrl_msg);
     RCLCPP_INFO(this->get_logger(), "Controller switched to Diff");
 
-    // 2. Check if costmap exists
+    // Check if costmap exists
     {
         std::lock_guard<std::mutex> lock(map_mutex_);
         if (!latest_costmap_) {
@@ -69,14 +147,7 @@ void SimaNavigator::executeMission()
         }
     }
 
-    // 3. Define Waypoints (hardcoded or read from Parameter)       ->    TODO: change to parameter
-    std::vector<std::pair<double, double>> raw_points = {
-        {1.5, 0.5},
-        {2.0, 0.7},
-        {2.39, 0.5}
-    };
-
-    // 4. Safety Check and Path Generation
+    // Safety Check and Path Generation
     auto goal_msg = NavThroughPoses::Goal();
     goal_msg.poses.clear();
 
@@ -105,14 +176,14 @@ void SimaNavigator::executeMission()
         RCLCPP_INFO(this->get_logger(), " -> (%.2f, %.2f)", pose.pose.position.x, pose.pose.position.y);
     }
 
-    // 5. Wait for Action Server
+    // Wait for Action Server
     if (!nav_client_->wait_for_action_server(std::chrono::seconds(5))) {
         RCLCPP_ERROR(this->get_logger(), "Nav2 Action Server not available!");
         is_navigating_ = false;
         return;
     }
 
-    // 6. Send waypoints to Nav2
+    // Send waypoints to Nav2
     RCLCPP_INFO(this->get_logger(), "Sending safe waypoints to Nav2...");
     
     auto send_goal_options = rclcpp_action::Client<NavThroughPoses>::SendGoalOptions();

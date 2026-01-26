@@ -12,6 +12,9 @@
 #include <mutex>
 #include <optional>
 
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_listener.h"
+
 namespace sima_mission
 {
 
@@ -33,6 +36,7 @@ private:
     std::optional<geometry_msgs::msg::PoseStamped> findNearestSafePoint(double wx, double wy, double search_r_m = 0.8);
     void worldToMap(double wx, double wy, int& mx, int& my);
     void mapToWorld(int mx, int my, double& wx, double& wy);
+    std::vector<std::pair<double, double>> parseWaypoints(const std::vector<double>& flat_points);
     
     // Action Client Callbacks
     void goalResponseCallback(const GoalHandleNav::SharedPtr & goal_handle);
@@ -48,6 +52,10 @@ private:
     nav_msgs::msg::OccupancyGrid::SharedPtr latest_costmap_;
     std::mutex map_mutex_;
     bool is_navigating_ = false;
+    bool last_start_signal_ = false;
+
+    std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+    std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 };
 
 } // namespace sima_mission

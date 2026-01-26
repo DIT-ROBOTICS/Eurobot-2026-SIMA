@@ -14,7 +14,12 @@
     <color rgba="1 0 0 1"/>
   </material>
 
-  <link name="base_footprint"/>
+  <link name="base_footprint">
+    <inertial>
+      <mass value="0.0001"/>
+      <inertia ixx="0.000001" ixy="0.0" ixz="0.0" iyy="0.000001" iyz="0.0" izz="0.000001"/>
+    </inertial>
+  </link>
 
   <joint name="base_joint" type="fixed">
     <parent link="base_footprint"/>
@@ -178,7 +183,9 @@
     <material>Gazebo/Black</material>
   </gazebo>
 
-  <xacro:macro name="vl53_sensor" params="name x y yaw color topic_name">
+  <xacro:arg name="robot_name" default="sima1"/>
+
+  <xacro:macro name="vl53_sensor" params="name x y yaw color">
     <link name="${name}_link">
       <visual>
         <geometry>
@@ -227,8 +234,8 @@
         
         <plugin name="${name}_controller" filename="libgazebo_ros_ray_sensor.so">
             <ros>
-                <namespace>/</namespace>
-                <remapping>~/out:=${topic_name}</remapping>
+                <namespace>/$(arg robot_name)</namespace>
+                <remapping>~/out:=${name}</remapping>
             </ros>
             <output_type>sensor_msgs/LaserScan</output_type> 
             <frame_name>${name}_link</frame_name>
@@ -238,15 +245,17 @@
     </gazebo>
   </xacro:macro>
 
-    <xacro:vl53_sensor name="sensor_left"   x="0.075" y="0.075"  yaw="0.785"  color="red" topic_name="/sim/vl53_left"/>
-    <xacro:vl53_sensor name="sensor_center" x="0.08"  y="0.0"    yaw="0.0"    color="red" topic_name="/sim/vl53_center"/>
-    <xacro:vl53_sensor name="sensor_right"  x="0.075" y="-0.075" yaw="-0.785" color="red" topic_name="/sim/vl53_right"/>
+    <xacro:vl53_sensor name="vl53_left"   x="0.075" y="0.075"  yaw="0.785"  color="red"/>
+    <xacro:vl53_sensor name="vl53_center" x="0.08"  y="0.0"    yaw="0.0"    color="red"/>
+    <xacro:vl53_sensor name="vl53_right"  x="0.075" y="-0.075" yaw="-0.785" color="red"/>
 
 
   <gazebo>
     <plugin name="diff_drive" filename="libgazebo_ros_diff_drive.so">
       <ros>
-        <namespace></namespace>
+        <namespace>/$(arg robot_name)</namespace>
+        <remapping>cmd_vel:=cmd_vel</remapping>
+        <remapping>odom:=odom</remapping>
       </ros>
       <left_joint>left_wheel_joint</left_joint>
       <right_joint>right_wheel_joint</right_joint>
@@ -254,15 +263,28 @@
       <wheel_diameter>0.06</wheel_diameter>   
       
       <publish_odom>true</publish_odom>
-      <publish_odom_tf>true</publish_odom_tf>
-      <publish_wheel_tf>true</publish_wheel_tf>
+      <publish_odom_tf>false</publish_odom_tf>
+      <publish_wheel_tf>false</publish_wheel_tf>
+      <publish_wheel_joint_state>true</publish_wheel_joint_state>
       <odometry_frame>odom</odometry_frame>
       <robot_base_frame>base_footprint</robot_base_frame>
-      <command_topic>cmd_vel</command_topic>
 
       <max_wheel_torque>20</max_wheel_torque>
       <max_wheel_acceleration>2.0</max_wheel_acceleration>
 
+    </plugin>
+  </gazebo>
+
+  <gazebo>
+    <plugin name="gazebo_ros_p3d" filename="libgazebo_ros_p3d.so">
+      <ros>
+        <namespace>/$(arg robot_name)</namespace>
+        <remapping>odom:=ground_truth_pose</remapping>
+      </ros>
+      <frame_name>map</frame_name> <body_name>base_footprint</body_name> <update_rate>50.0</update_rate>
+      <xyz_offset>0 0 0</xyz_offset>
+      <rpy_offset>0 0 0</rpy_offset>
+      <gaussian_noise>0.0</gaussian_noise>
     </plugin>
   </gazebo>
 

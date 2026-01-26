@@ -133,7 +133,7 @@ controller_server:
       min_approach_linear_vel: 0.01
       approach_dist: 0.5
       transform_tolerance: 0.1
-      heading_rotate_threshold: 0.6  # rad, about 34 degrees
+      heading_rotate_threshold: 0.6 # rad, about 34 degrees
       heading_slowdown_threshold: 0.3 # rad, about 17 degrees
       heading_kp: 2.5
       min_turing_linear_vel: 0.05
@@ -157,7 +157,7 @@ local_costmap:
       plugins: ["static_layer"]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
-        map_subscribe_transient_local: True      
+        map_subscribe_transient_local: True
         enabled: False
       # sensor_layer:
       #   plugin: "Sensor_costmap_plugin::SensorLayer"
@@ -185,7 +185,16 @@ global_costmap:
       trinary_costmap: false
       lethal_cost_threshold: 10
       unknown_cost_value: 255
-      plugins: ["static_layer", "obstacle_layer", "inflation_layer", "sensor_layer", "rival_layer", "object_layer", "keepout_layer"]
+      plugins:
+        [
+          "static_layer",
+          "obstacle_layer",
+          "inflation_layer",
+          "sensor_layer",
+          "rival_layer",
+          "object_layer",
+          "keepout_layer",
+        ]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
@@ -193,12 +202,12 @@ global_costmap:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
         observation_sources: fake_obstacle
-        
+
         fake_obstacle:
           topic: /detected_obstacles
           max_obstacle_height: 2.0
-          clearing: True   
-          marking: True    
+          clearing: True
+          marking: True
           data_type: "PointCloud2"
           raytrace_max_range: 3.0
           raytrace_min_range: 0.0
@@ -239,13 +248,13 @@ global_costmap:
         moving_cost_scaling_factor: 0.9
         unknown_cost_scaling_factor: 10.0
         max_extend_length: 0.6
-        cov_range_max: 0.05385164807134504  # sqrt(0.0029)
-        cov_range_min: 0.01414213562373095  # sqrt(0.0002)
+        cov_range_max: 0.05385164807134504 # sqrt(0.0029)
+        cov_range_min: 0.01414213562373095 # sqrt(0.0002)
         vel_range_max: 1.0
         vel_range_min: 0.0
         inscribed_radius_rate: 0.99
         inflation_radius_rate: 1.005
-        debug_mode: 0                       # 0: off, 1: Print rival state change only, 2: Print rival state change and statistics, 3: Print everything continuously
+        debug_mode: 0 # 0: off, 1: Print rival state change only, 2: Print rival state change and statistics, 3: Print everything continuously
         use_statistic_method: False
         offset_vel_factor_weight_statistic: 0.42
         expand_vel_factor_weight_statistic: 0.42
@@ -260,7 +269,7 @@ global_costmap:
         column_inflation_radius: 0.22
         board_inflation_radius: 0.22
         cost_scaling_factor: 3.0
-        base_frame: "base_link"       # added
+        base_frame: "base_link" # added
       keepout_layer:
         plugin: "keepout_costmap_plugin::KeepoutLayer"
         enabled: True
@@ -275,29 +284,85 @@ global_costmap:
         #                      2.225, 0.075, 0.45, 0.15,  # G
         #                      2.775, 0.075, 0.45, 0.15,  # H
         #                      2.775, 0.875, 0.45, 0.45,  # I
-        #                      2.625, 1.775, 0.45, 0.45,] # J 
-        keepout_zone_array: [0.1,   0.8,   0.2,   0.2,   # A
-                             0.7,   0.1,   0.2,   0.2,   # B
-                             0.8,   0.8,   0.2,   0.2,   # C
-                             1.25,  1.45,  0.2,   0.2,   # D
-                             #-----------------------------#
-                             1.5,   0.1,   0.2,   0.2,   # E
-                             1.5,   0.8,   0.2,   0.2,   # F
-                             #-----------------------------#
-                             1.75,  1.45,  0.2,   0.2,   # G
-                             2.2,   0.8,   0.2,   0.2,   # H
-                             2.3,   0.1,   0.2,   0.2,   # I
-                             2.9,   0.8,   0.2,   0.2,   # J
-                             #-----------------------------#
-                             0.175, 0.4,   0.15,  0.2,   # K
-                             0.175, 1.2,   0.15,  0.2,   # L
-                             1.1,   0.175, 0.2,   0.15,  # M
-                             1.15,  0.8,   0.2,   0.15,  # N
-                             #-----------------------------#
-                             2.825, 0.4,   0.15,  0.2,   # O
-                             2.825, 1.2,   0.15,  0.2,   # P
-                             1.9,   0.175, 0.2,   0.15,  # Q
-                             1.85,  0.8,   0.2,   0.15,] # R
+        #                      2.625, 1.775, 0.45, 0.45,] # J
+        keepout_zone_array: [
+            0.1,
+            0.8,
+            0.2,
+            0.2, # A
+            0.7,
+            0.1,
+            0.2,
+            0.2, # B
+            0.8,
+            0.8,
+            0.2,
+            0.2, # C
+            1.25,
+            1.45,
+            0.2,
+            0.2, # D
+            #-----------------------------#
+            1.5,
+            0.1,
+            0.2,
+            0.2, # E
+            1.5,
+            0.8,
+            0.2,
+            0.2, # F
+            #-----------------------------#
+            1.75,
+            1.45,
+            0.2,
+            0.2, # G
+            2.2,
+            0.8,
+            0.2,
+            0.2, # H
+            2.3,
+            0.1,
+            0.2,
+            0.2, # I
+            2.9,
+            0.8,
+            0.2,
+            0.2, # J
+            #-----------------------------#
+            0.175,
+            0.4,
+            0.15,
+            0.2, # K
+            0.175,
+            1.2,
+            0.15,
+            0.2, # L
+            1.1,
+            0.175,
+            0.2,
+            0.15, # M
+            1.15,
+            0.8,
+            0.2,
+            0.15, # N
+            #-----------------------------#
+            2.825,
+            0.4,
+            0.15,
+            0.2, # O
+            2.825,
+            1.2,
+            0.15,
+            0.2, # P
+            1.9,
+            0.175,
+            0.2,
+            0.15, # Q
+            1.85,
+            0.8,
+            0.2,
+            0.15,
+          ] # R
         inflation_length: 0.15
         cost_scaling_factor: 5.0
       always_send_full_costmap: True
@@ -325,9 +390,9 @@ planner_server:
       use_astar: true
       allow_unknown: false
 
-      cost_travel_multiplier: 2.0   # larger values -> more obstacle avoidance
-      downsample_costmap: false    # set to true to downsample costmap for planning
-      downsampling_factor: 4     # factor by which to downsample costmap (example 2 -> half size in each dimension)
+      cost_travel_multiplier: 2.0 # larger values -> more obstacle avoidance
+      downsample_costmap: false # set to true to downsample costmap for planning
+      downsampling_factor: 4 # factor by which to downsample costmap (example 2 -> half size in each dimension)
       debug_visualizations: false # set to true to enable visualizations in Rviz
       # to improve performance, set to true to enable smac planner to use
       smooth_path: true
@@ -338,12 +403,11 @@ planner_server:
       smoother_on_update: True
       smoother_do_refinement: True
       # model parameters
-      motion_model_for_search: "DIFF"  # "DIFF" or "OMNI"
-      cost_penalty: 5.0                # penalty for too close to obstacles
+      motion_model_for_search: "DIFF" # "DIFF" or "OMNI"
+      cost_penalty: 5.0 # penalty for too close to obstacles
       # no need to change
       max_iterations: 20000
       max_on_approach_iterations: 1000
-
 
 smoother_server:
   ros__parameters:
@@ -404,7 +468,7 @@ velocity_smoother:
     max_velocity: [1.1, 1.1, 12.0]
     min_velocity: [-1.1, -1.1, -12.0]
     max_accel: [3.3, 3.3, 120.0]
-    max_decel: [-4.4, -4.4, -120.0]  
+    max_decel: [-4.4, -4.4, -120.0]
     odom_topic: "/odom/wheel"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
@@ -426,7 +490,7 @@ docking_server:
     # Types of docks
     dock_plugins: ["dock"]
     dock:
-      plugin: 'opennav_docking::SimpleChargingDock'
+      plugin: "opennav_docking::SimpleChargingDock"
       docking_threshold: 0.005
       use_debounce: true
       xy_debounce_threshold: 2
@@ -439,12 +503,12 @@ docking_server:
       use_stall_detection: false
       base_frame: "base_link"
 
-    docks: ['home_dock']
+    docks: ["home_dock"]
     home_dock:
-      type: 'dock'
+      type: "dock"
       frame: map
       pose: [0.0, 0.0, 0.0]
-    
+
     # dock_database: /my/path/to/dock_database.yaml
 
     controllers: ["Ordinary", "Gentle", "Rush"]
@@ -484,6 +548,19 @@ docking_server:
       reserved_distance: 0.0
       stop_degree: 120.0
       rival_radius: 0.44
+
+sima_navigator:
+  ros__parameters:
+    use_sim_time: True
+    start_pose_tolerance: 0.05 # the range to consider "at starting point"
+
+    # start position 1:
+    start_point_1: [0.5, 0.5]
+    waypoints_1: [1.0, 0.5, 2.0, 0.7, 2.0, 1.0] # [x1, y1, x2, y2, x3, y3, ...]
+
+    # start position 2:
+    start_point_2: [1.0, 0.5]
+    waypoints_2: [1.5, 0.8, 2.0, 0.7]
 
 final_pose_bridge:
   ros__parameters:

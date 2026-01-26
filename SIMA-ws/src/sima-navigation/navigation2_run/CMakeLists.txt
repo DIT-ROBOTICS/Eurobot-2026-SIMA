@@ -18,6 +18,7 @@ find_package(opennav_docking_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(btcpp_ros2_interfaces REQUIRED)
 find_package(rclcpp_action REQUIRED)
+find_package(tf2_msgs REQUIRED)
 
 include_directories(include)
 
@@ -43,6 +44,9 @@ ament_target_dependencies(system_check_test_server rclcpp btcpp_ros2_interfaces)
 add_executable(vl53_bridge src/vl53_bridge.cpp)
 ament_target_dependencies(vl53_bridge rclcpp std_msgs geometry_msgs tf2 tf2_ros tf2_geometry_msgs)
 
+add_executable(tf_republisher src/tf_republisher.cpp)
+ament_target_dependencies(tf_republisher rclcpp tf2_msgs)
+
 target_link_libraries(script_sim yaml-cpp)
 
 install(TARGETS
@@ -52,6 +56,7 @@ install(TARGETS
   system_check
   system_check_test_server
   vl53_bridge
+  tf_republisher
   DESTINATION lib/${PROJECT_NAME}
 )
 
