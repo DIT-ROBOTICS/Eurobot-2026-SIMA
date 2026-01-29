@@ -21,6 +21,8 @@ SimaNavigator::SimaNavigator() : Node("sima_navigator")
     // Declare Parameters
     this->declare_parameter("start_pose_tolerance", 0.05);
 
+    this->declare_parameter("start_delay_seconds", 2.0);
+
     this->declare_parameter("start_point_1", std::vector<double>{0.5, 0.5});
     this->declare_parameter("start_point_2", std::vector<double>{1.0, 0.5});
 
@@ -99,6 +101,7 @@ void SimaNavigator::executeMission()
     }
 
     double tolerance = this->get_parameter("start_pose_tolerance").as_double();
+    double start_delay = this->get_parameter("start_delay_seconds").as_double();
     std::vector<double> ref1 = this->get_parameter("start_point_1").as_double_array();
     std::vector<double> ref2 = this->get_parameter("start_point_2").as_double_array();
     
@@ -113,6 +116,9 @@ void SimaNavigator::executeMission()
         raw_points = parseWaypoints(this->get_parameter("waypoints_1").as_double_array());
     } 
     else if (dist(robot_x, robot_y, ref2[0], ref2[1]) < tolerance) {
+        RCLCPP_INFO(this->get_logger(), "Matched Start Condition 2. Waiting %.2f seconds before start...", start_delay);
+        rclcpp::sleep_for(std::chrono::milliseconds(static_cast<int>(start_delay * 1000)));
+
         RCLCPP_INFO(this->get_logger(), "Matched Start Condition 2. Loading Waypoints Set 2.");
         raw_points = parseWaypoints(this->get_parameter("waypoints_2").as_double_array());
     } 

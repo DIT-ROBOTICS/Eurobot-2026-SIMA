@@ -6,6 +6,7 @@
 #include "nav2_costmap_2d/layered_costmap.hpp"
 #include "geometry_msgs/msg/pose_array.hpp"
 #include "geometry_msgs/msg/point.hpp"
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include <vector>
 #include <mutex>
 
@@ -52,6 +53,7 @@ private:
   void poseArrayCallback(const geometry_msgs::msg::PoseArray::SharedPtr msg);
 
   bool isInsideAnyIgnoreZone(double x, double y);
+  bool isPointNearOtherRobots(double x, double y);
 
   void parseIgnoreZones(const std::vector<double>& params);
 
@@ -64,16 +66,29 @@ private:
   void removeOutdatedObstacles();
 
   rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr sub_;
+
+  // Declare Subscriber of sima pose
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr sima1_pose_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr sima2_pose_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr sima3_pose_sub_;
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr sima4_pose_sub_;
   
   // Store all historically detected obstacle center points (World Frame / Map Frame)
   std::vector<ObstacleNode> persistent_obstacles_;
   
   std::mutex data_mutex_;
 
+  int sima_id_;
   double obstacle_radius_;
   double inflation_radius_;
   double cost_scaling_factor_;
   double obstacle_lifespan_ = 5.0;
+
+  // Declare variable to store other robots' positions
+  geometry_msgs::msg::Pose sima1_pose_;
+  geometry_msgs::msg::Pose sima2_pose_;
+  geometry_msgs::msg::Pose sima3_pose_;
+  geometry_msgs::msg::Pose sima4_pose_;
 };
 
 }  // namespace Sensor_costmap_plugin
