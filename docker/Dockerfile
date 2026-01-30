@@ -83,8 +83,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
 RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     apt-get update && \
     apt-get install -y \
-    ros-$ROS_DISTRO-robot-localization && \
-    ros-$ROS_DISTRO-domain-bridge && \
+    ros-$ROS_DISTRO-robot-localization \
+    ros-$ROS_DISTRO-domain-bridge \
     ros-$ROS_DISTRO-teleop-twist-joy && \
     rm -rf /var/lib/apt/lists/*
 
