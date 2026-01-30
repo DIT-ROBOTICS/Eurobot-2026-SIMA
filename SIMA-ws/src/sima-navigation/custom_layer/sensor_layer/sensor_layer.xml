@@ -1,0 +1,5 @@
+<library path="sensor_layer">
+  <class type="Sensor_costmap_plugin::SensorLayer" base_class_type="nav2_costmap_2d::Layer">
+    <description>This is a custom layer to process VL53L0X sensor data.</description>
+  </class>
+</library>

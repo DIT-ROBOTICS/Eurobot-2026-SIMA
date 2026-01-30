@@ -33,15 +33,18 @@ def generate_launch_description():
     launch_dir = os.path.join(pkg_dir, 'launch')
     ros_domain_id = os.getenv('ROS_DOMAIN_ID')
 
-    if ros_domain_id == '11':
-        params_file_name = 'nav2_params_11.yaml'
-        print('[INFO] [sim_launch] ROS_DOMAIN_ID=11. Use nav2_params_11.yaml')
-    elif ros_domain_id == '14':
-        params_file_name = 'nav2_params_14.yaml'
-        print('[INFO] [sim_launch] ROS_DOMAIN_ID=14. Use nav2_params_14.yaml')
-    else:
-        params_file_name = 'nav2_params_default.yaml'
-        print(f'[INFO] [sim_launch] Unrecognized ROS_DOMAIN_ID={ros_domain_id}. Use default params file')
+    params_file_name = 'nav2_params_sima.yaml'
+    print('[INFO] [sim_launch] Use nav2_params_sima.yaml')
+
+    # if ros_domain_id == '11':
+    #     params_file_name = 'nav2_params_11.yaml'
+    #     print('[INFO] [sim_launch] ROS_DOMAIN_ID=11. Use nav2_params_11.yaml')
+    # elif ros_domain_id == '14':
+    #     params_file_name = 'nav2_params_14.yaml'
+    #     print('[INFO] [sim_launch] ROS_DOMAIN_ID=14. Use nav2_params_14.yaml')
+    # else:
+    #     params_file_name = 'nav2_params_default.yaml'
+    #     print(f'[INFO] [sim_launch] Unrecognized ROS_DOMAIN_ID={ros_domain_id}. Use default params file')
 
     namespace = LaunchConfiguration('namespace')
     use_namespace = LaunchConfiguration('use_namespace')
@@ -124,6 +127,11 @@ def generate_launch_description():
         'use_obstacle_sim',
         default_value='True',
         description='Whether to start obstacle simulator')
+    
+    declare_remove_tf_prefix_cmd = DeclareLaunchArgument(
+        'remove_prefix',
+        default_value='sima1/',
+        description='Prefix to remove from TF frames')
 
     rviz_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -162,6 +170,31 @@ def generate_launch_description():
         output='screen'
     )
 
+    vl53_bridge_cmd = Node(
+        package='navigation2_run',
+        executable='vl53_bridge',
+        name='vl53_bridge',
+        output='screen',
+        parameters=[{'trigger_distance': 0.5} , {'use_sim_time': use_sim_time}]
+    )
+
+    remove_prefix = LaunchConfiguration('remove_prefix')
+    tf_republisher_cmd = Node(
+        package='navigation2_run',
+        executable='tf_republisher',
+        name='tf_republisher',
+        output='screen',
+        parameters=[{'remove_prefix': remove_prefix}]
+    )
+
+    sima_navigator_cmd = Node(
+        package='sima_mission_controller',
+        executable='sima_navigator',
+        name='sima_navigator',
+        output='screen',
+        parameters=[params_file],
+    )
+
     # Create the launch description and populate
     ld = LaunchDescription()
 
@@ -180,17 +213,24 @@ def generate_launch_description():
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_robot_pose_remap_cmd)
 
+    ld.add_action(declare_remove_tf_prefix_cmd)
+
+    ld.add_action(tf_republisher_cmd)
+
     # Declare obstacle simulator launch option
-    ld.add_action(declare_use_obstacle_sim_cmd)
+    # ld.add_action(declare_use_obstacle_sim_cmd)
 
     # Add the actions to launch all of the navigation nodes
     ld.add_action(rviz_cmd)       # remove if it is in RPI
     ld.add_action(bringup_cmd)
+    ld.add_action(vl53_bridge_cmd)
 
     # Add the system check node
     ld.add_action(system_check_cmd)
 
     # Add the obstacle simulator node
-    ld.add_action(obstacle_sim_cmd)
+    # ld.add_action(obstacle_sim_cmd)
+
+    ld.add_action(sima_navigator_cmd)
 
     return ld

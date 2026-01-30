@@ -1,0 +1,5 @@
+<library path="teb_controller">
+  <class type="teb_controller::TebController" base_class_type="nav2_core::Controller">
+    <description>Timed Elastic Band based local planner.</description>
+  </class>
+</library>

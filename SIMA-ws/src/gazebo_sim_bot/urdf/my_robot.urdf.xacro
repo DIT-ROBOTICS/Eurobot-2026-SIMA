@@ -1,0 +1,291 @@
+<?xml version="1.0"?>
+<robot name="sima_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <material name="blue">
+    <color rgba="0 0 0.8 1"/>
+  </material>
+  <material name="white">
+    <color rgba="1 1 1 1"/>
+  </material>
+  <material name="black">
+    <color rgba="0 0 0 1"/>
+  </material>
+  <material name="red">
+    <color rgba="1 0 0 1"/>
+  </material>
+
+  <link name="base_footprint">
+    <inertial>
+      <mass value="0.0001"/>
+      <inertia ixx="0.000001" ixy="0.0" ixz="0.0" iyy="0.000001" iyz="0.0" izz="0.000001"/>
+    </inertial>
+  </link>
+
+  <joint name="base_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0.105" rpy="0 0 0"/> 
+  </joint>
+
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="0.15 0.15 0.15"/>
+      </geometry>
+      <material name="blue"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.15 0.15 0.15"/>
+      </geometry>
+    </collision>
+    <inertial> 
+      <mass value="2.0"/>
+      <inertia ixx="0.0075" ixy="0.0" ixz="0.0" iyy="0.0075" iyz="0.0" izz="0.0075"/>
+    </inertial>
+  </link>
+
+  <link name="left_wheel">
+    <visual>
+      <geometry>
+        <cylinder radius="0.03" length="0.02"/> 
+      </geometry>
+      <material name="white"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.03" length="0.02"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.2"/>
+      <inertia ixx="0.0002" ixy="0" ixz="0" iyy="0.0002" iyz="0" izz="0.0002"/>
+    </inertial>
+  </link>
+
+  <joint name="left_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="left_wheel"/>
+    <origin xyz="0 0.085 -0.075" rpy="-1.57 0 0"/> 
+    <axis xyz="0 0 1"/>
+  </joint>
+
+  <link name="right_wheel">
+    <visual>
+      <geometry>
+        <cylinder radius="0.03" length="0.02"/>
+      </geometry>
+      <material name="white"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.03" length="0.02"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.2"/>
+      <inertia ixx="0.0002" ixy="0" ixz="0" iyy="0.0002" iyz="0" izz="0.0002"/>
+    </inertial>
+  </link>
+
+  <joint name="right_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="right_wheel"/>
+    <origin xyz="0 -0.085 -0.075" rpy="-1.57 0 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+
+  <link name="front_caster">
+    <visual>
+      <geometry>
+        <sphere radius="0.015"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.015"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.05"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+  </link>
+
+  <joint name="front_caster_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="front_caster"/>
+    <origin xyz="0.06 0 -0.09"/> 
+  </joint>
+
+  <link name="back_caster">
+    <visual>
+      <geometry>
+        <sphere radius="0.015"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.015"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.05"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+  </link>
+
+  <joint name="back_caster_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="back_caster"/>
+    <origin xyz="-0.06 0 -0.09"/> 
+  </joint>
+
+  <gazebo reference="left_wheel">
+    <mu1>10.0</mu1> 
+    <mu2>10.0</mu2> 
+    <kp>500000.0</kp> 
+    <kd>10.0</kd>     
+    <minDepth>0.001</minDepth>
+    <maxVel>1.0</maxVel>
+    <material>Gazebo/White</material>
+  </gazebo>
+
+  <gazebo reference="right_wheel">
+    <mu1>10.0</mu1>
+    <mu2>10.0</mu2>
+    <kp>500000.0</kp>
+    <kd>10.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxVel>1.0</maxVel>
+    <material>Gazebo/White</material>
+  </gazebo>
+
+  <gazebo reference="front_caster">
+    <mu1>0.001</mu1> 
+    <mu2>0.001</mu2> 
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxVel>1.0</maxVel>
+    <material>Gazebo/Black</material>
+  </gazebo>
+
+  <gazebo reference="back_caster">
+    <mu1>0.001</mu1>
+    <mu2>0.001</mu2>
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+    <minDepth>0.001</minDepth>
+    <maxVel>1.0</maxVel>
+    <material>Gazebo/Black</material>
+  </gazebo>
+
+  <xacro:arg name="robot_name" default="sima1"/>
+
+  <xacro:macro name="vl53_sensor" params="name x y yaw color">
+    <link name="${name}_link">
+      <visual>
+        <geometry>
+          <box size="0.01 0.02 0.01"/> 
+        </geometry>
+        <material name="${color}"/>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.01 0.02 0.01"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="0.01"/>
+        <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
+      </inertial>
+    </link>
+
+    <joint name="${name}_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="${name}_link"/>
+      <origin xyz="${x} ${y} 0.0" rpy="0 0 ${yaw}"/>
+    </joint>
+
+    <gazebo reference="${name}_link">
+      <sensor name="${name}" type="ray">
+        <pose>0 0 0 0 0 0</pose>
+        <always_on>true</always_on>
+        <visualize>true</visualize> <update_rate>20</update_rate>
+        
+        <ray>
+          <scan>
+            <horizontal>
+              <samples>1</samples>            <resolution>1</resolution>
+              <min_angle>-0.05</min_angle>     <max_angle>0.05</max_angle>
+            </horizontal>
+          </scan>
+          <range>
+            <min>0.02</min> <max>4.0</max>  <resolution>0.01</resolution>
+          </range>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.01</stddev> </noise>
+        </ray>
+        
+        <plugin name="${name}_controller" filename="libgazebo_ros_ray_sensor.so">
+            <ros>
+                <namespace>/$(arg robot_name)</namespace>
+                <remapping>~/out:=${name}</remapping>
+            </ros>
+            <output_type>sensor_msgs/LaserScan</output_type> 
+            <frame_name>${name}_link</frame_name>
+            <radiation_type>infrared</radiation_type> 
+        </plugin>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+
+    <xacro:vl53_sensor name="vl53_left"   x="0.075" y="0.075"  yaw="0.785"  color="red"/>
+    <xacro:vl53_sensor name="vl53_center" x="0.08"  y="0.0"    yaw="0.0"    color="red"/>
+    <xacro:vl53_sensor name="vl53_right"  x="0.075" y="-0.075" yaw="-0.785" color="red"/>
+
+
+  <gazebo>
+    <plugin name="diff_drive" filename="libgazebo_ros_diff_drive.so">
+      <ros>
+        <namespace>/$(arg robot_name)</namespace>
+        <remapping>cmd_vel:=cmd_vel</remapping>
+        <remapping>odom:=odom</remapping>
+      </ros>
+      <left_joint>left_wheel_joint</left_joint>
+      <right_joint>right_wheel_joint</right_joint>
+      <wheel_separation>0.17</wheel_separation> 
+      <wheel_diameter>0.06</wheel_diameter>   
+      
+      <publish_odom>true</publish_odom>
+      <publish_odom_tf>false</publish_odom_tf>
+      <publish_wheel_tf>false</publish_wheel_tf>
+      <publish_wheel_joint_state>true</publish_wheel_joint_state>
+      <odometry_frame>odom</odometry_frame>
+      <robot_base_frame>base_footprint</robot_base_frame>
+
+      <max_wheel_torque>20</max_wheel_torque>
+      <max_wheel_acceleration>2.0</max_wheel_acceleration>
+
+    </plugin>
+  </gazebo>
+
+  <gazebo>
+    <plugin name="gazebo_ros_p3d" filename="libgazebo_ros_p3d.so">
+      <ros>
+        <namespace>/$(arg robot_name)</namespace>
+        <remapping>odom:=ground_truth_pose</remapping>
+      </ros>
+      <frame_name>map</frame_name> <body_name>base_footprint</body_name> <update_rate>50.0</update_rate>
+      <xyz_offset>0 0 0</xyz_offset>
+      <rpy_offset>0 0 0</rpy_offset>
+      <gaussian_noise>0.0</gaussian_noise>
+    </plugin>
+  </gazebo>
+
+</robot>

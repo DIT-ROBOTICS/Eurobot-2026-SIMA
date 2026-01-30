@@ -5,7 +5,6 @@
 
 #include "pluginlib/class_list_macros.hpp"
 
-// #include "nav2_core/planner_exceptions.hpp"
 #include "nav2_core/exceptions.hpp"
 #include "nav2_util/node_utils.hpp"
 #include "nav2_util/geometry_utils.hpp"
@@ -116,10 +115,6 @@ namespace diff_controller
 
     void DiffController::setPlan(const nav_msgs::msg::Path & path)
     {   
-        // Transform global path into the robot's frame
-        // global_plan_ = path;
-        // global_plan_ = transformGlobalPlan(path);
-
         global_plan_ = path;
         if (debug_global_plan_pub_->is_activated()){
             debug_global_plan_pub_->publish(path);
@@ -251,51 +246,6 @@ namespace diff_controller
             debug_lookahead_pub_->publish(lookahead_msg);
         }
 
-        // double linear_vel = 0.0, angular_vel = 0.0;
-
-        // Pure pursuit logic: if goal poitn is in front of robot, compute curvature; 
-        // else rotate in place until it is
-        // if (goal_pose.position.x > 0){
-        //     const double x = goal_pose.position.x;
-        //     const double y = goal_pose.position.y;
-        //     const double denom = (x * x + y * y);
-
-        //     double curvature = 0.0;
-        //     if (denom > 0.0001){
-        //         curvature = 2.0 * y / denom;
-        //     }
-
-        //     // Base linear velocity on distance to goal point
-        //     linear_vel = desired_linear_vel_;
-
-        //     // Simply slow down near final goal
-        //     // Use the last point of transformed_plan as "approx final" in robot frame
-        //     const auto & final_pose = transformed_plan.poses.back().pose;
-        //     const double dist_to_goal = hypot(final_pose.position.x, final_pose.position.y);
-        //     if (dist_to_goal < approach_dist_){
-        //         // Linearly scale down velocity
-        //         const double ratio = max(0.0, dist_to_goal / max(approach_dist_, 0.0001));
-        //         linear_vel = max(min_approach_linear_vel_, ratio * desired_linear_vel_);
-        //     }
-
-        //     // Enforce min_linear_vel_
-        //     linear_vel = max(min_linear_vel_, linear_vel);
-
-        //     // Diff drive: w = curvature * v
-        //     angular_vel = curvature * linear_vel;
-        // }
-        // else {
-        //     linear_vel = 0.0;
-        //     angular_vel = max_angular_vel_;
-        // }
-
-        // // Clamp angular velocity
-        // angular_vel = clampAbs(angular_vel, abs(max_angular_vel_));
-
-
-
-
-
         // Check for obstacles at the lookahead point
         std::string costmap_frame = costmap_ros_->getGlobalFrameID();
         
@@ -331,24 +281,21 @@ namespace diff_controller
              RCLCPP_WARN(logger_, "[%s] Failed to transform lookahead point to costmap frame for checking", plugin_name_.c_str());
         }
 
-
-
-
         double linear_vel = 0.0, angular_vel = 0.0;
 
         const double x = goal_pose.position.x;
         const double y = goal_pose.position.y;
         const double denom = (x * x + y * y);
 
-        // lookahead 點方向誤差（在 base frame 下）
+        // lookahead point heading error (in base frame)
         const double heading_error = std::atan2(y, x);
 
-        // 1) 若朝向差太大：先原地轉到差不多再走（避免起步先畫弧線/亂轉）
+        // 1) If the heading error is too large: rotate in place until it's acceptable before moving forward (to avoid starting with an arc/erratic turn)
         if (std::fabs(heading_error) > heading_rotate_threshold_) {
             linear_vel = 0.0;
             angular_vel = clampAbs(heading_kp_ * heading_error, std::fabs(max_angular_vel_));
         } else {
-            // 2) 朝向差不大：允許前進，但依誤差縮放線速（越歪越慢，越容易直線）
+            // 2) If the heading error is not large: allow forward movement, but scale linear velocity based on the error (the more skewed, the slower, making it easier to go straight)
             double scale = 1.0;
             if (std::fabs(heading_error) > heading_slowdown_threshold_) {
                 scale =
@@ -359,7 +306,7 @@ namespace diff_controller
 
             linear_vel = std::max(min_turning_linear_vel_, scale * desired_linear_vel_);
 
-            // 3) 接近終點時的降速（沿用你原本 approach 機制）
+            // 3) Slow down when approaching the final goal (using your original approach mechanism)
             const auto & final_pose = transformed_plan.poses.back().pose;
             const double dist_to_goal = hypot(final_pose.position.x, final_pose.position.y);
             if (dist_to_goal < approach_dist_) {
@@ -367,29 +314,20 @@ namespace diff_controller
                 linear_vel = std::max(min_approach_linear_vel_, ratio * linear_vel);
             }
 
-            // 4) enforce 最小線速（如果你要保留）
+            // 4) Enforce minimum linear velocity (if you want to keep it)
             linear_vel = std::max(min_linear_vel_, linear_vel);
 
-            // 5) 角速度：用 heading P 控制（直線優先），可加一點 curvature 作為輔助追蹤
+            // 5) Angular velocity: use heading P control (prioritize straight line), can add some curvature as auxiliary tracking
             double curvature = 0.0;
             if (denom > 1e-6) {
                 curvature = 2.0 * y / denom;
             }
 
-            // 混合：heading 主導、curvature 輔助（0.0~0.5 之間可調）
+            // Mix: heading dominant, curvature auxiliary (adjustable between 0.0~0.5)
             const double curvature_weight = 0.2;
             angular_vel = heading_kp_ * heading_error + curvature_weight * (curvature * linear_vel);
             angular_vel = clampAbs(angular_vel, std::fabs(max_angular_vel_));
         }
-
-
-
-
-
-
-
-
-
 
         // Create and return TwistStamped message
         geometry_msgs::msg::TwistStamped cmd_vel;
@@ -399,42 +337,6 @@ namespace diff_controller
         cmd_vel.twist.linear.y = 0.0;
         cmd_vel.twist.angular.z = angular_vel;
         return cmd_vel;
-
-
-        // // Find the first pose which is at a distance greater than lookahead_distance_
-        // auto goal_pose = std::find_if(global_plan_.poses.begin(), global_plan_.poses.end(),
-        //     [&](const auto & global_plan_pose){
-        //         return hypot(
-        //             global_plan_pose.pose.position.x ,
-        //             global_plan_pose.pose.position.y) >= lookahead_dist_;
-        //     }) -> pose;
-        
-        // double linear_vel, angular_vel;
-        // // Compute linear and angular velocities to reach goal_pose
-        // // If the goal pose is in front of the robot then compute the velocity using the pure pursuit algorithm
-        // // else rotate with the max angular velocity until the goal pose is in front of the robot
-        // if (goal_pose.position.x > 0){
-        //     auto curvature = 2 * goal_pose.position.y / 
-        //         (goal_pose.position.x * goal_pose.position.x + goal_pose.position.y * goal_pose.position.y);
-        //     linear_vel = desired_linear_vel_;
-        //     angular_vel = curvature * linear_vel;
-        // }
-        // else {
-        //     linear_vel = 0.0;
-        //     angular_vel = max_angular_vel_;
-        // }
-
-        // // Create and publish a TwistStamped message with the desired velocity
-        // geometry_msgs::msg::TwistStamped cmd_vel;
-        // cmd_vel.header.frame_id = pose.header.frame_id;
-        // cmd_vel.header.stamp = clock_->now();
-        // cmd_vel.twist.linear.x = linear_vel;
-        // cmd_vel.twist.angular.z = max(
-        //     -1.0 * abs(max_angular_vel_), 
-        //     min(angular_vel, abs(max_angular_vel_))
-        // );
-
-        // return cmd_vel;
     }
 
 

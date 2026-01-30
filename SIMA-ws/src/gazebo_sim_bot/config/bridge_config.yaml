@@ -1,0 +1,88 @@
+name: sima1_bridge
+topics:
+  # send clock to domains 2 and 3
+  /clock:
+    type: rosgraph_msgs/msg/Clock
+    from_domain: 1
+    to_domain: 2
+  
+  /clock:
+    type: rosgraph_msgs/msg/Clock
+    from_domain: 1
+    to_domain: 3
+
+  # send simulated VL53 data to domains 2 and 3
+  # also remap to /sensors/raw_ranges
+  /sima1/sensors/raw_ranges:
+    type: std_msgs/msg/Float32MultiArray
+    from_domain: 1
+    to_domain: 2
+    remap: /sensors/raw_ranges
+  
+  /sima2/sensors/raw_ranges:
+    type: std_msgs/msg/Float32MultiArray
+    from_domain: 1
+    to_domain: 3
+    remap: /sensors/raw_ranges
+
+  # send /tf and /tf_static given by gazebo to domains 2 and 3
+  # remap to /tf_bridged and /tf_static_bridged
+  # in domain 2 and 3 will prune the frames' names'prefix
+  # e.g. /sima1/base_link -> /base_link
+  /tf:
+    type: tf2_msgs/msg/TFMessage
+    from_domain: 1
+    to_domain: 2
+    remap: /tf_bridged
+  
+  /tf:
+    type: tf2_msgs/msg/TFMessage
+    from_domain: 1
+    to_domain: 3
+    remap: /tf_bridged
+
+  /tf_static:
+    type: tf2_msgs/msg/TFMessage
+    from_domain: 1
+    to_domain: 2
+    remap: /tf_static_bridged
+    qos:
+      durability: transient_local
+      reliability: reliable
+      history: keep_all
+      depth: 100
+  
+  /tf_static:
+    type: tf2_msgs/msg/TFMessage
+    from_domain: 1
+    to_domain: 3
+    remap: /tf_static_bridged
+    qos:
+      durability: transient_local
+      reliability: reliable
+      history: keep_all
+      depth: 100
+
+  # remap cmd_vel in domain 2 and 3 to /sima1/cmd_vel and /sima2/cmd_vel respectively
+  # so that nav2 can control different robots in gazebo from different domains
+  /cmd_vel:
+    type: geometry_msgs/msg/Twist
+    from_domain: 2
+    to_domain: 1
+    remap: /sima1/cmd_vel
+  
+  /cmd_vel:
+    type: geometry_msgs/msg/Twist
+    from_domain: 3
+    to_domain: 1
+    remap: /sima2/cmd_vel
+  
+  /start_sima:
+    type: std_msgs/msg/Bool
+    from_domain: 1
+    to_domain: 2
+  
+  /start_sima:
+    type: std_msgs/msg/Bool
+    from_domain: 1
+    to_domain: 3

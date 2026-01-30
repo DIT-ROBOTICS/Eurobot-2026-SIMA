@@ -200,27 +200,27 @@ local_costmap:
       height: 2
       resolution: 0.01
       robot_radius: 0.075
-      # plugins: ["static_layer", "inflation_layer"]
-      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      plugins: ["static_layer", "inflation_layer"]
+      # plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
 
-      obstacle_layer:
-        plugin: "nav2_costmap_2d::ObstacleLayer"
-        enabled: True
-        observation_sources: fake_obstacle
+      # obstacle_layer:
+      #   plugin: "nav2_costmap_2d::ObstacleLayer"
+      #   enabled: True
+      #   observation_sources: fake_obstacle
         
-        fake_obstacle:
-          topic: /detected_obstacles
-          max_obstacle_height: 2.0
-          clearing: True   
-          marking: True    
-          data_type: "PointCloud2"
-          raytrace_max_range: 3.0
-          raytrace_min_range: 0.0
-          obstacle_max_range: 2.5
-          obstacle_min_range: 0.0
+      #   fake_obstacle:
+      #     topic: /detected_obstacles
+      #     max_obstacle_height: 2.0
+      #     clearing: True   
+      #     marking: True    
+      #     data_type: "PointCloud2"
+      #     raytrace_max_range: 3.0
+      #     raytrace_min_range: 0.0
+      #     obstacle_max_range: 2.5
+      #     obstacle_min_range: 0.0
       
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
@@ -401,7 +401,7 @@ velocity_smoother:
     min_velocity: [-1.1, -1.1, -12.0]
     max_accel: [3.3, 3.3, 120.0]
     max_decel: [-4.4, -4.4, -120.0]  
-    odom_topic: "/final_pose_nav"
+    odom_topic: "/odom/wheel"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
     velocity_timeout: 0.1 # must be less than velocity_smoother_wait in docking_server

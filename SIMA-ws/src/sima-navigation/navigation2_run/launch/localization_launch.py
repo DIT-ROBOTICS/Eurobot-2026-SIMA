@@ -93,26 +93,38 @@ def generate_launch_description():
     #     ]
     # )
 
-    brinup_localization_cmd_group = GroupAction([
-        IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(os.path.join(get_package_share_directory('sima-localization-sim'), 'launch', 'localization_sim.launch.py')),
-                launch_arguments={'namespace': namespace,
-                                'use_sim_time': use_sim_time,
-                                'autostart': autostart,
-                                'params_file': params_file,
-                                'use_composition': use_composition,
-                                'remappings': str(remappings),
-                                'use_respawn': use_respawn}.items()),
 
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(get_package_share_directory('sima-localization-sim'), 'launch', 'robot_localization.launch.py')),
-            launch_arguments={'namespace': namespace,
-                                'use_sim_time': use_sim_time,
-                                'autostart': autostart,
-                                'params_file': params_file,
-                                'use_composition': use_composition,
-                                'use_respawn': use_respawn}.items()),
-    ])
+    # Bringup localization sim nodes
+    # brinup_localization_cmd_group = GroupAction([
+    #     IncludeLaunchDescription(
+    #             PythonLaunchDescriptionSource(os.path.join(get_package_share_directory('sima-localization-sim'), 'launch', 'localization_sim.launch.py')),
+    #             launch_arguments={'namespace': namespace,
+    #                             'use_sim_time': use_sim_time,
+    #                             'autostart': autostart,
+    #                             'params_file': params_file,
+    #                             'use_composition': use_composition,
+    #                             'remappings': str(remappings),
+    #                             'use_respawn': use_respawn}.items()),
+
+    #     IncludeLaunchDescription(
+    #         PythonLaunchDescriptionSource(os.path.join(get_package_share_directory('sima-localization-sim'), 'launch', 'robot_localization.launch.py')),
+    #         launch_arguments={'namespace': namespace,
+    #                             'use_sim_time': use_sim_time,
+    #                             'autostart': autostart,
+    #                             'params_file': params_file,
+    #                             'use_composition': use_composition,
+    #                             'use_respawn': use_respawn}.items()),
+    # ])
+
+    # for gazebo simulation, we just publish a static transform from map to odom
+    fake_localization_tf = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='map_to_odom_static_publisher',
+        arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom'],
+        parameters=[{'use_sim_time': use_sim_time}],
+        output='screen'
+    )
 
 
     # Load nodes group
@@ -183,6 +195,7 @@ def generate_launch_description():
     # ld.add_action(localization_sim)
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)
-    ld.add_action(brinup_localization_cmd_group)
+    # ld.add_action(brinup_localization_cmd_group)      # for localization sim
+    ld.add_action(fake_localization_tf)               # for gazebo simulation
 
     return ld
