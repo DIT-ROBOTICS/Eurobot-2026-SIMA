@@ -85,13 +85,14 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     apt-get install -y \
     ros-$ROS_DISTRO-robot-localization && \
     ros-$ROS_DISTRO-domain-bridge && \
+    ros-$ROS_DISTRO-teleop-twist-joy && \
     rm -rf /var/lib/apt/lists/*
 
-# Install zenoh-bridge-ros2dds
-RUN curl -L https://download.eclipse.org/zenoh/debian-repo/zenoh-public-key | sudo gpg --dearmor --yes --output /etc/apt/keyrings/zenoh-public-key.gpg && \
-    echo "deb [signed-by=/etc/apt/keyrings/zenoh-public-key.gpg] https://download.eclipse.org/zenoh/debian-repo/ /" | sudo tee -a /etc/apt/sources.list > /dev/null && \
-    apt-get update && \
-    apt-get -y install zenoh-bridge-ros2dds
+# # Install zenoh-bridge-ros2dds
+# RUN curl -L https://download.eclipse.org/zenoh/debian-repo/zenoh-public-key | sudo gpg --dearmor --yes --output /etc/apt/keyrings/zenoh-public-key.gpg && \
+#     echo "deb [signed-by=/etc/apt/keyrings/zenoh-public-key.gpg] https://download.eclipse.org/zenoh/debian-repo/ /" | sudo tee -a /etc/apt/sources.list > /dev/null && \
+#     apt-get update && \
+#     apt-get -y install zenoh-bridge-ros2dds
 
 # Create a non-root user to use the container
 RUN groupadd --gid ${USERGID} ${USERNAME} \
