@@ -120,7 +120,7 @@ fi
 # ** No MASTER in ROS2 
 
 source /opt/ros/humble/setup.bash
-source /home/user/Eurobot-2026-SIMA/install/local_setup.bash
+source /home/user/SIMA-ws/install/setup.bash
 
 alias build='colcon build --symlink-install --parallel-workers 4'
 alias sim='ros2 launch navigation2_run sim_launch.py'
