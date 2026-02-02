@@ -5,7 +5,7 @@ OdomSimNode::OdomSimNode()
     : Node("odom_sim_node"), x_(0.0), y_(0.0), theta_(0.0),
       gen_(rd_()), slip_dist_(-0.05, 0.05) // Slip noise between -0.05 and 0.05 m/s or rad/s
 {
-    odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("odom/wheel", 10);
+    odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("wheel/odom", 10);
 
     cmd_vel_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
         "cmd_vel", 10,

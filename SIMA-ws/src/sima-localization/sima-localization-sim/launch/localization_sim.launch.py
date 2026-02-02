@@ -7,13 +7,13 @@ def generate_launch_description():
             package='sima-localization-sim',
             executable='global_sim_node',
             name='global_sim_node',
-            namespace='bot2'
+            namespace='sima_1'
         ),
-        Node(
-            package='sima-localization-sim',
-            executable='odom_sim_node',
-            name='odom_sim_node'
-        ),
+        # Node(
+        #     package='sima-localization-sim',
+        #     executable='odom_sim_node',
+        #     name='odom_sim_node'
+        # ),
         Node(
             package='sima-localization-sim',
             executable='robot_pose_node',
