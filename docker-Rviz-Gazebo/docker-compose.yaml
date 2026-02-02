@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  sima:
+    build: .
+    image: eurobot2026-sima-rviz-gazebo:latest
+    container_name: sima-rviz-gazebo
+    command: /bin/bash
+    tty: true
+    network_mode: host
+    ipc: host
+    privileged: true
+    stdin_open: true
+    stop_grace_period: 1s
+
+    volumes:
+      - ../SIMA-ws:/home/user/SIMA-ws
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - $HOME/.Xauthority:/home/user/.Xauthority
+      - /dev:/dev
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+
+    working_dir: /home/user/SIMA-ws
+
+    environment:
+      - DISPLAY=${DISPLAY}
+      # - QT_X11_NO_MITSHM=1  # Can be uncommented if needed for certain graphics issues
+      - RCUTILS_COLORIZED_OUTPUT=1
+      - XAUTHORITY=/home/user/.Xauthority
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - ROS_DOMAIN_ID=1
+      # If experiencing OpenGL issues when running Gazebo, uncomment the following line:
+      # - LIBGL_ALWAYS_SOFTWARE=1
