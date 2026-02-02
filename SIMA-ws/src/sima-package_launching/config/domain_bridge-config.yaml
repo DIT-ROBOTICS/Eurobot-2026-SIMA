@@ -1,10 +1,10 @@
 # Name of the domain bridge, used for node naming and logging
 name: my_bridge
-from_domain: 77
-to_domain: 66
+from_domain: 20
+to_domain: 14
 topics:
   # Bridge "/bot2/pose/global"
-  bot2/pose/global:
+  sima_1/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
   # # Bridge "/clock" topic from doman ID 2 to domain ID 3
   # clock:
