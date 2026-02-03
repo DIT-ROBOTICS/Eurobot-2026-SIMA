@@ -34,5 +34,18 @@ def generate_launch_description():
             name='ekf_filter_node_map',
 	        output='screen',
             parameters=[parameters_file_path],
-           )  
+           ),
+    launch_ros.actions.Node(
+            package='micro_ros_agent', 
+            executable='micro_ros_agent', 
+            name='micro_ros_agent_serial',
+            arguments=['serial', '--dev', '/dev/ttyAMA0', '-b', '2000000'],
+            output='screen',
+            ),
+    launch_ros.actions.Node(
+            package='sima-localization-real', 
+            executable='sima-localization-odom-bridge_node', 
+            name='sima_localization_odom_bridge_node',
+            output='screen',
+            )
 ])

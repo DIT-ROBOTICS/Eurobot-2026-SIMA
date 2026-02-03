@@ -7,9 +7,28 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+
+set(THIS_PACKAGE_DEPS
+  rclcpp
+  geometry_msgs
+  nav_msgs
+)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
+include_directories(
+  include
+  ${catkin_INCLUDE_DIRS}
+)
+
+add_executable(sima-localization-odom-bridge_node src/sima-localization-odom-bridge_node.cpp)
+ament_target_dependencies(sima-localization-odom-bridge_node ${THIS_PACKAGE_DEPS})
+install(TARGETS sima-localization-odom-bridge_node
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 # add launch files into install folder
 install(DIRECTORY

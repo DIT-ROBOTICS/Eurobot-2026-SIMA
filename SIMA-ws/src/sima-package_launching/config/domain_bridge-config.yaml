@@ -1,7 +1,7 @@
 # Name of the domain bridge, used for node naming and logging
 name: my_bridge
 from_domain: 50
-to_domain: 0
+to_domain: 14
 topics:
   # Bridge "/bot2/pose/global"
   sima_1/pose/global:
