@@ -69,7 +69,12 @@ namespace diff_controller
         declare_parameter_if_not_declared(node, plugin_name_ + ".heading_rotate_threshold", rclcpp::ParameterValue(0.6));
         declare_parameter_if_not_declared(node, plugin_name_ + ".heading_slowdown_threshold", rclcpp::ParameterValue(0.3));
         declare_parameter_if_not_declared(node, plugin_name_ + ".heading_kp", rclcpp::ParameterValue(2.5));
-        declare_parameter_if_not_declared(node, plugin_name_ + ".min_turing_linear_vel", rclcpp::ParameterValue(0.05));
+        declare_parameter_if_not_declared(node, plugin_name_ + ".min_turning_linear_vel", rclcpp::ParameterValue(0.05));
+        declare_parameter_if_not_declared(node, plugin_name_ + ".max_acc_linear", rclcpp::ParameterValue(0.02));
+        declare_parameter_if_not_declared(node, plugin_name_ + ".max_acc_angular", rclcpp::ParameterValue(0.1));
+        declare_parameter_if_not_declared(node, plugin_name_ + ".max_decel_linear", rclcpp::ParameterValue(0.04));
+        declare_parameter_if_not_declared(node, plugin_name_ + ".max_decel_angular", rclcpp::ParameterValue(0.2));
+        declare_parameter_if_not_declared(node, plugin_name_ + ".curvature_weight", rclcpp::ParameterValue(0.2));
 
         node->get_parameter(plugin_name_ + ".desired_linear_vel", desired_linear_vel_);
         node->get_parameter(plugin_name_ + ".lookahead_dist", lookahead_dist_);
@@ -80,7 +85,12 @@ namespace diff_controller
         node->get_parameter(plugin_name_ + ".heading_rotate_threshold", heading_rotate_threshold_);
         node->get_parameter(plugin_name_ + ".heading_slowdown_threshold", heading_slowdown_threshold_);
         node->get_parameter(plugin_name_ + ".heading_kp", heading_kp_);
-        node->get_parameter(plugin_name_ + ".min_turing_linear_vel", min_turning_linear_vel_);
+        node->get_parameter(plugin_name_ + ".min_turning_linear_vel", min_turning_linear_vel_);
+        node->get_parameter(plugin_name_ + ".max_acc_linear", max_acc_linear_);
+        node->get_parameter(plugin_name_ + ".max_acc_angular", max_acc_angular_);
+        node->get_parameter(plugin_name_ + ".max_decel_linear", max_decel_linear_);
+        node->get_parameter(plugin_name_ + ".max_decel_angular", max_decel_angular_);
+        node->get_parameter(plugin_name_ + ".curvature_weight", curvature_weight_);
 
 
         double transform_tolerance = 0.1;
@@ -105,6 +115,10 @@ namespace diff_controller
         RCLCPP_INFO(logger_, "[%s] Activating controller", plugin_name_.c_str());
         debug_global_plan_pub_->on_activate();
         debug_lookahead_pub_->on_activate();
+
+        last_linear_vel_ = 0.0;
+        last_angular_vel_ = 0.0;
+        last_time_ = rclcpp::Time(0, 0, clock_->get_clock_type());
     }
 
     void DiffController::deactivate(){
@@ -222,6 +236,8 @@ namespace diff_controller
         const geometry_msgs::msg::Twist & velocity,
         nav2_core::GoalChecker * goal_checker)
     {
+        rclcpp::Time current_time = clock_->now();
+
         // Transform global plan to the robot's frame and prune already passed poses
         auto transformed_plan = transformGlobalPlan(pose);
 
@@ -252,7 +268,7 @@ namespace diff_controller
         
         geometry_msgs::msg::PoseStamped goal_pose_local;
         goal_pose_local.header.frame_id = costmap_ros_->getBaseFrameID();
-        goal_pose_local.header.stamp = clock_->now();
+        goal_pose_local.header.stamp = current_time;
         goal_pose_local.pose = goal_pose; 
 
         geometry_msgs::msg::PoseStamped goal_pose_global;
@@ -271,6 +287,10 @@ namespace diff_controller
                 if (cost == nav2_costmap_2d::LETHAL_OBSTACLE || cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
                     RCLCPP_WARN(logger_, "[%s] Stop! Obstacle detected ahead. Cost: %d", plugin_name_.c_str(), cost);
                     
+                    last_linear_vel_ = 0.0;
+                    last_angular_vel_ = 0.0;
+                    last_time_ = current_time;
+
                     geometry_msgs::msg::TwistStamped stop_cmd;
                     stop_cmd.header.stamp = clock_->now();
                     stop_cmd.header.frame_id = pose.header.frame_id;
@@ -324,18 +344,77 @@ namespace diff_controller
             }
 
             // Mix: heading dominant, curvature auxiliary (adjustable between 0.0~0.5)
-            const double curvature_weight = 0.2;
-            angular_vel = heading_kp_ * heading_error + curvature_weight * (curvature * linear_vel);
+            // const double curvature_weight = 0.2;
+            angular_vel = heading_kp_ * heading_error + curvature_weight_ * (curvature * linear_vel);
             angular_vel = clampAbs(angular_vel, std::fabs(max_angular_vel_));
         }
+
+        // Apply acceleration limits
+        double target_linear_vel = linear_vel;
+        double target_angular_vel = angular_vel;
+
+        if (last_time_.nanoseconds() != 0) {
+            double dt = (current_time - last_time_).seconds();
+            
+            if (dt > 0.0 && dt < 0.5) {
+                // // Linear velocity acceleration limiting
+                // double dv_linear = target_linear_vel - last_linear_vel_;
+                
+                // //  If braking, allow larger deceleration
+                // double linear_limit = (dv_linear > 0) ? max_acc_linear_ : max_decel_linear_;
+                // dv_linear = std::max(-linear_limit * dt, std::min(dv_linear, linear_limit * dt));
+                // target_linear_vel = last_linear_vel_ + dv_linear;
+
+                // // Angular velocity acceleration limiting
+                // double dv_angular = target_angular_vel - last_angular_vel_;
+                // double angular_limit = (dv_angular > 0) ? max_acc_angular_ : max_decel_angular_;
+                // dv_angular = std::max(-angular_limit * dt, std::min(dv_angular, angular_limit * dt));
+                // target_angular_vel = last_angular_vel_ + dv_angular;
+
+
+
+                // --- 1. 線性速度限制 (Linear) ---
+                double dv_linear = target_linear_vel - last_linear_vel_;
+                
+                // 判斷邏輯：如果目標速度的絕對值 > 上次速度絕對值，就是在"催油門"(Accel)
+                // 否則就是在"踩煞車"(Decel)
+                bool linear_is_accel = std::abs(target_linear_vel) > std::abs(last_linear_vel_);
+                double linear_limit = linear_is_accel ? max_acc_linear_ : max_decel_linear_;
+                
+                // 限制變化量
+                dv_linear = std::clamp(dv_linear, -linear_limit * dt, linear_limit * dt);
+                target_linear_vel = last_linear_vel_ + dv_linear;
+
+                // --- 2. 角速度限制 (Angular) ---
+                double dv_angular = target_angular_vel - last_angular_vel_;
+
+                // 同樣的邏輯：絕對值變大=加速，絕對值變小=減速
+                bool angular_is_accel = std::abs(target_angular_vel) > std::abs(last_angular_vel_);
+                double angular_limit = angular_is_accel ? max_acc_angular_ : max_decel_angular_;
+
+                // [特殊情況優化]：當正負號反轉時 (例如從順時針瞬間變逆時針)
+                // 這種情況應該視為"全力煞車"，所以強制使用 Decel 限制
+                if (target_angular_vel * last_angular_vel_ < 0) {
+                    angular_limit = max_decel_angular_;
+                }
+
+                // 限制變化量
+                dv_angular = std::clamp(dv_angular, -angular_limit * dt, angular_limit * dt);
+                target_angular_vel = last_angular_vel_ + dv_angular;
+            }
+        }
+
+        last_linear_vel_ = target_linear_vel;
+        last_angular_vel_ = target_angular_vel;
+        last_time_ = current_time;
 
         // Create and return TwistStamped message
         geometry_msgs::msg::TwistStamped cmd_vel;
         cmd_vel.header.frame_id = pose.header.frame_id;
-        cmd_vel.header.stamp = clock_->now();
-        cmd_vel.twist.linear.x = linear_vel;
+        cmd_vel.header.stamp = current_time;
+        cmd_vel.twist.linear.x = target_linear_vel;
         cmd_vel.twist.linear.y = 0.0;
-        cmd_vel.twist.angular.z = angular_vel;
+        cmd_vel.twist.angular.z = target_angular_vel;
         return cmd_vel;
     }
 

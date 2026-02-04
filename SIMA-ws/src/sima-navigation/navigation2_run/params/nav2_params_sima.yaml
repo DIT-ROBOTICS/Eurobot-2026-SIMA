@@ -127,16 +127,21 @@ controller_server:
     Diff:
       plugin: "diff_controller::DiffController"
       desired_linear_vel: 0.3
-      lookahead_dist: 0.2
-      max_angular_vel: 0.8
+      lookahead_dist: 0.1
+      max_angular_vel: 1.0
       min_linear_vel: 0.0
       min_approach_linear_vel: 0.01
-      approach_dist: 0.5
+      approach_dist: 0.3
       transform_tolerance: 0.1
-      heading_rotate_threshold: 0.6 # rad, about 34 degrees
-      heading_slowdown_threshold: 0.3 # rad, about 17 degrees
+      heading_rotate_threshold: 0.8 # rad, about 46 degrees
+      heading_slowdown_threshold: 0.4 # rad, about 23 degrees
       heading_kp: 2.5
-      min_turing_linear_vel: 0.05
+      min_turning_linear_vel: 0.02
+      max_acc_linear: 0.6 # m/s^2
+      max_acc_angular: 0.5 # rad/s^2
+      max_decel_linear: 1.2 # m/s^2
+      max_decel_angular: 4.0 # rad/s^2
+      curvature_weight: 0.4 # weight for curvature in cost function
       # allow_unknown: True
 
       # plugin: "teb_controller::TebController"
@@ -164,11 +169,11 @@ controller_server:
       # goal_heading_switch_dist: 0.3 # When to start adjusting final heading based on distance to goal
 
       # # Velocity limits (match with your velocity_smoother)
-      # max_v: 0.3 # Slightly reduced for testing, increase to 1.5 once stable
+      # max_v: 0.4 # Slightly reduced for testing, increase to 1.5 once stable
       # min_v: 0.0
       # max_w: 1.0
-      # max_acc_v: 0.1 # Acceleration limits
-      # max_acc_w: 0.2 # Angular acceleration limits
+      # max_acc_v: 1.0 # Acceleration limits
+      # max_acc_w: 5.0 # Angular acceleration limits
 
       # # Costmap related
       # max_cost_threshold: 100.0 # Try to plan as long as it's below this cost
