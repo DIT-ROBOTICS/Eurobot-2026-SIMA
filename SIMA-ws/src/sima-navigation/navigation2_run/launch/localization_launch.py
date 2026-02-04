@@ -117,14 +117,14 @@ def generate_launch_description():
     # ])
 
     # for gazebo simulation, we just publish a static transform from map to odom
-    fake_localization_tf = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='map_to_odom_static_publisher',
-        arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom'],
-        parameters=[{'use_sim_time': use_sim_time}],
-        output='screen'
-    )
+    # fake_localization_tf = Node(
+    #     package='tf2_ros',
+    #     executable='static_transform_publisher',
+    #     name='map_to_odom_static_publisher',
+    #     arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom'],
+    #     parameters=[{'use_sim_time': use_sim_time}],
+    #     output='screen'
+    # )
 
 
     # Load nodes group
@@ -196,6 +196,6 @@ def generate_launch_description():
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)
     # ld.add_action(brinup_localization_cmd_group)      # for localization sim
-    ld.add_action(fake_localization_tf)               # for gazebo simulation
+    # ld.add_action(fake_localization_tf)               # for gazebo simulation
 
     return ld

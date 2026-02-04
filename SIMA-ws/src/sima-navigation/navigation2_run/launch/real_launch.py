@@ -34,15 +34,18 @@ def generate_launch_description():
     launch_dir = os.path.join(pkg_dir, 'launch')
     ros_domain_id = os.getenv('ROS_DOMAIN_ID')
 
-    if ros_domain_id == '11':
-        params_file_name = 'nav2_params_11.yaml'
-        print('[INFO] [real_launch] ROS_DOMAIN_ID=11. Use nav2_params_11.yaml')
-    elif ros_domain_id == '14':
-        params_file_name = 'nav2_params_14.yaml'
-        print('[INFO] [real_launch] ROS_DOMAIN_ID=14. Use nav2_params_14.yaml')
-    else:
-        params_file_name = 'nav2_params_default.yaml'
-        print(f'[INFO] [sim_launch] Unrecognized ROS_DOMAIN_ID={ros_domain_id}. Use default params file')
+    params_file_name = 'nav2_params_sima.yaml'
+    print('[INFO] [sim_launch] Use nav2_params_sima.yaml')
+
+    # if ros_domain_id == '11':
+    #     params_file_name = 'nav2_params_11.yaml'
+    #     print('[INFO] [real_launch] ROS_DOMAIN_ID=11. Use nav2_params_11.yaml')
+    # elif ros_domain_id == '14':
+    #     params_file_name = 'nav2_params_14.yaml'
+    #     print('[INFO] [real_launch] ROS_DOMAIN_ID=14. Use nav2_params_14.yaml')
+    # else:
+    #     params_file_name = 'nav2_params_default.yaml'
+    #     print(f'[INFO] [sim_launch] Unrecognized ROS_DOMAIN_ID={ros_domain_id}. Use default params file')
 
     # Create the launch configuration variables
     namespace = LaunchConfiguration('namespace')
@@ -157,6 +160,22 @@ def generate_launch_description():
         output='screen'
     )
 
+    vl53_bridge_cmd = Node(
+        package='navigation2_run',
+        executable='vl53_bridge',
+        name='vl53_bridge',
+        output='screen',
+        parameters=[{'trigger_distance': 0.5} , {'use_sim_time': use_sim_time}]
+    )
+
+    sima_navigator_cmd = Node(
+        package='sima_mission_controller',
+        executable='sima_navigator',
+        name='sima_navigator',
+        output='screen',
+        parameters=[params_file],
+    )
+
     # Create the launch description and populate
     ld = LaunchDescription()
 
@@ -179,8 +198,10 @@ def generate_launch_description():
     # Add any conditioned actions
 
     # Add the actions to launch all of the navigation nodes
-    ld.add_action(rviz_cmd)
+    # ld.add_action(rviz_cmd)
     ld.add_action(bringup_cmd)
+    # ld.add_action(vl53_bridge_cmd)
+    ld.add_action(sima_navigator_cmd)
 
     # Add the final pose bridge node
     ld.add_action(final_pose_bridge_cmd)
