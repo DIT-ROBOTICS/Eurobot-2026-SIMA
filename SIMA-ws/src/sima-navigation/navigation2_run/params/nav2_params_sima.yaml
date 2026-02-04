@@ -128,7 +128,7 @@ controller_server:
       plugin: "diff_controller::DiffController"
       desired_linear_vel: 0.3
       lookahead_dist: 0.1
-      max_angular_vel: 1.0
+      max_angular_vel: 0.8
       min_linear_vel: 0.0
       min_approach_linear_vel: 0.01
       approach_dist: 0.3
@@ -136,13 +136,13 @@ controller_server:
       heading_rotate_threshold: 0.8 # rad, about 46 degrees
       heading_slowdown_threshold: 0.4 # rad, about 23 degrees
       heading_kp: 2.5
-      min_turning_linear_vel: 0.02
-      max_acc_linear: 0.6 # m/s^2
-      max_acc_angular: 0.5 # rad/s^2
+      min_turning_linear_vel: 0.01
+      max_acc_linear: 0.15 # m/s^2
+      max_acc_angular: 0.4 # rad/s^2
       max_decel_linear: 0.6 # m/s^2
       max_decel_linear_emergency: 2.0 # m/s^2
-      max_decel_angular: 4.0 # rad/s^2
-      curvature_weight: 0.4 # weight for curvature in cost function
+      max_decel_angular: 3.2 # rad/s^2
+      curvature_weight: 0.3 # weight for curvature in cost function
       # allow_unknown: True
 
       # plugin: "teb_controller::TebController"
