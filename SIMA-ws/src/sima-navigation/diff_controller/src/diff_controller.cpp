@@ -73,6 +73,7 @@ namespace diff_controller
         declare_parameter_if_not_declared(node, plugin_name_ + ".max_acc_linear", rclcpp::ParameterValue(0.02));
         declare_parameter_if_not_declared(node, plugin_name_ + ".max_acc_angular", rclcpp::ParameterValue(0.1));
         declare_parameter_if_not_declared(node, plugin_name_ + ".max_decel_linear", rclcpp::ParameterValue(0.04));
+        declare_parameter_if_not_declared(node, plugin_name_ + ".max_decel_linear_emergency", rclcpp::ParameterValue(2.0));
         declare_parameter_if_not_declared(node, plugin_name_ + ".max_decel_angular", rclcpp::ParameterValue(0.2));
         declare_parameter_if_not_declared(node, plugin_name_ + ".curvature_weight", rclcpp::ParameterValue(0.2));
 
@@ -89,6 +90,7 @@ namespace diff_controller
         node->get_parameter(plugin_name_ + ".max_acc_linear", max_acc_linear_);
         node->get_parameter(plugin_name_ + ".max_acc_angular", max_acc_angular_);
         node->get_parameter(plugin_name_ + ".max_decel_linear", max_decel_linear_);
+        node->get_parameter(plugin_name_ + ".max_decel_linear_emergency", max_decel_linear_emergency_);
         node->get_parameter(plugin_name_ + ".max_decel_angular", max_decel_angular_);
         node->get_parameter(plugin_name_ + ".curvature_weight", curvature_weight_);
 
@@ -273,6 +275,10 @@ namespace diff_controller
 
         geometry_msgs::msg::PoseStamped goal_pose_global;
 
+        bool is_obstacle = false;
+        double linear_vel = 0.0;
+        double angular_vel = 0.0;
+
         
         if (transformPose(tf_, costmap_frame, goal_pose_local, goal_pose_global, transform_tolerance_)) {
             
@@ -287,66 +293,73 @@ namespace diff_controller
                 if (cost == nav2_costmap_2d::LETHAL_OBSTACLE || cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
                     RCLCPP_WARN(logger_, "[%s] Stop! Obstacle detected ahead. Cost: %d", plugin_name_.c_str(), cost);
                     
-                    last_linear_vel_ = 0.0;
-                    last_angular_vel_ = 0.0;
-                    last_time_ = current_time;
+                    // last_linear_vel_ = 0.0;
+                    // last_angular_vel_ = 0.0;
+                    // last_time_ = current_time;
 
-                    geometry_msgs::msg::TwistStamped stop_cmd;
-                    stop_cmd.header.stamp = clock_->now();
-                    stop_cmd.header.frame_id = pose.header.frame_id;
-                    return stop_cmd;
+                    // geometry_msgs::msg::TwistStamped stop_cmd;
+                    // stop_cmd.header.stamp = clock_->now();
+                    // stop_cmd.header.frame_id = pose.header.frame_id;
+                    // return stop_cmd;
+
+                    is_obstacle = true;
+                    linear_vel = 0.0;
+                    angular_vel = 0.0;
                 }
             }
         } else {
              RCLCPP_WARN(logger_, "[%s] Failed to transform lookahead point to costmap frame for checking", plugin_name_.c_str());
         }
 
-        double linear_vel = 0.0, angular_vel = 0.0;
+        // double linear_vel = 0.0, angular_vel = 0.0;
 
-        const double x = goal_pose.position.x;
-        const double y = goal_pose.position.y;
-        const double denom = (x * x + y * y);
+        if (!is_obstacle){
 
-        // lookahead point heading error (in base frame)
-        const double heading_error = std::atan2(y, x);
+            const double x = goal_pose.position.x;
+            const double y = goal_pose.position.y;
+            const double denom = (x * x + y * y);
 
-        // 1) If the heading error is too large: rotate in place until it's acceptable before moving forward (to avoid starting with an arc/erratic turn)
-        if (std::fabs(heading_error) > heading_rotate_threshold_) {
-            linear_vel = 0.0;
-            angular_vel = clampAbs(heading_kp_ * heading_error, std::fabs(max_angular_vel_));
-        } else {
-            // 2) If the heading error is not large: allow forward movement, but scale linear velocity based on the error (the more skewed, the slower, making it easier to go straight)
-            double scale = 1.0;
-            if (std::fabs(heading_error) > heading_slowdown_threshold_) {
-                scale =
-                1.0 - (std::fabs(heading_error) - heading_slowdown_threshold_) /
-                        std::max(heading_rotate_threshold_ - heading_slowdown_threshold_, 1e-6);
-                scale = std::clamp(scale, 0.0, 1.0);
+            // lookahead point heading error (in base frame)
+            const double heading_error = std::atan2(y, x);
+
+            // 1) If the heading error is too large: rotate in place until it's acceptable before moving forward (to avoid starting with an arc/erratic turn)
+            if (std::fabs(heading_error) > heading_rotate_threshold_) {
+                linear_vel = 0.0;
+                angular_vel = clampAbs(heading_kp_ * heading_error, std::fabs(max_angular_vel_));
+            } else {
+                // 2) If the heading error is not large: allow forward movement, but scale linear velocity based on the error (the more skewed, the slower, making it easier to go straight)
+                double scale = 1.0;
+                if (std::fabs(heading_error) > heading_slowdown_threshold_) {
+                    scale =
+                    1.0 - (std::fabs(heading_error) - heading_slowdown_threshold_) /
+                            std::max(heading_rotate_threshold_ - heading_slowdown_threshold_, 1e-6);
+                    scale = std::clamp(scale, 0.0, 1.0);
+                }
+
+                linear_vel = std::max(min_turning_linear_vel_, scale * desired_linear_vel_);
+
+                // 3) Slow down when approaching the final goal (using your original approach mechanism)
+                const auto & final_pose = transformed_plan.poses.back().pose;
+                const double dist_to_goal = hypot(final_pose.position.x, final_pose.position.y);
+                if (dist_to_goal < approach_dist_) {
+                    const double ratio = std::max(0.0, dist_to_goal / std::max(approach_dist_, 1e-6));
+                    linear_vel = std::max(min_approach_linear_vel_, ratio * linear_vel);
+                }
+
+                // 4) Enforce minimum linear velocity (if you want to keep it)
+                linear_vel = std::max(min_linear_vel_, linear_vel);
+
+                // 5) Angular velocity: use heading P control (prioritize straight line), can add some curvature as auxiliary tracking
+                double curvature = 0.0;
+                if (denom > 1e-6) {
+                    curvature = 2.0 * y / denom;
+                }
+
+                // Mix: heading dominant, curvature auxiliary (adjustable between 0.0~0.5)
+                // const double curvature_weight = 0.2;
+                angular_vel = heading_kp_ * heading_error + curvature_weight_ * (curvature * linear_vel);
+                angular_vel = clampAbs(angular_vel, std::fabs(max_angular_vel_));
             }
-
-            linear_vel = std::max(min_turning_linear_vel_, scale * desired_linear_vel_);
-
-            // 3) Slow down when approaching the final goal (using your original approach mechanism)
-            const auto & final_pose = transformed_plan.poses.back().pose;
-            const double dist_to_goal = hypot(final_pose.position.x, final_pose.position.y);
-            if (dist_to_goal < approach_dist_) {
-                const double ratio = std::max(0.0, dist_to_goal / std::max(approach_dist_, 1e-6));
-                linear_vel = std::max(min_approach_linear_vel_, ratio * linear_vel);
-            }
-
-            // 4) Enforce minimum linear velocity (if you want to keep it)
-            linear_vel = std::max(min_linear_vel_, linear_vel);
-
-            // 5) Angular velocity: use heading P control (prioritize straight line), can add some curvature as auxiliary tracking
-            double curvature = 0.0;
-            if (denom > 1e-6) {
-                curvature = 2.0 * y / denom;
-            }
-
-            // Mix: heading dominant, curvature auxiliary (adjustable between 0.0~0.5)
-            // const double curvature_weight = 0.2;
-            angular_vel = heading_kp_ * heading_error + curvature_weight_ * (curvature * linear_vel);
-            angular_vel = clampAbs(angular_vel, std::fabs(max_angular_vel_));
         }
 
         // Apply acceleration limits
@@ -379,7 +392,15 @@ namespace diff_controller
                 // 判斷邏輯：如果目標速度的絕對值 > 上次速度絕對值，就是在"催油門"(Accel)
                 // 否則就是在"踩煞車"(Decel)
                 bool linear_is_accel = std::abs(target_linear_vel) > std::abs(last_linear_vel_);
-                double linear_limit = linear_is_accel ? max_acc_linear_ : max_decel_linear_;
+                
+                double current_decel_limit;
+                if (is_obstacle){
+                    current_decel_limit = max_decel_linear_emergency_;
+                } else {
+                    current_decel_limit = max_decel_linear_;
+                }
+                
+                double linear_limit = linear_is_accel ? max_acc_linear_ : current_decel_limit;
                 
                 // 限制變化量
                 dv_linear = std::clamp(dv_linear, -linear_limit * dt, linear_limit * dt);
@@ -415,6 +436,12 @@ namespace diff_controller
         cmd_vel.twist.linear.x = target_linear_vel;
         cmd_vel.twist.linear.y = 0.0;
         cmd_vel.twist.angular.z = target_angular_vel;
+
+        if (is_obstacle && std::abs(target_linear_vel) < 1e-3) {
+            last_linear_vel_ = 0.0;
+            throw nav2_core::PlannerException("DiffController: Emergency stop due to obstacle detected ahead.");
+        }
+
         return cmd_vel;
     }
 

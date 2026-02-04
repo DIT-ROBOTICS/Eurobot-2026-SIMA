@@ -139,7 +139,8 @@ controller_server:
       min_turning_linear_vel: 0.02
       max_acc_linear: 0.6 # m/s^2
       max_acc_angular: 0.5 # rad/s^2
-      max_decel_linear: 1.2 # m/s^2
+      max_decel_linear: 0.6 # m/s^2
+      max_decel_linear_emergency: 2.0 # m/s^2
       max_decel_angular: 4.0 # rad/s^2
       curvature_weight: 0.4 # weight for curvature in cost function
       # allow_unknown: True
