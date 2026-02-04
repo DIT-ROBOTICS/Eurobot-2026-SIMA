@@ -72,6 +72,7 @@ private:
     double max_acc_linear_{0.02}; // m/s^2
     double max_acc_angular_{0.1}; // rad/s^2
     double max_decel_linear_{0.04}; // m/s^2
+    double max_decel_linear_emergency_{2.0}; // m/s^2
     double max_decel_angular_{0.2}; // rad/s^2
     double curvature_weight_{0.2}; // weight for curvature in cost function
     rclcpp::Duration transform_tolerance_{rclcpp::Duration::from_seconds(0.1)};
