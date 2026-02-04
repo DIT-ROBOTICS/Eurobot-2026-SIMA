@@ -69,7 +69,17 @@ private:
     double heading_slowdown_threshold_{0.3}; // rad
     double heading_kp_{2.5};
     double min_turning_linear_vel_{0.05};
+    double max_acc_linear_{0.02}; // m/s^2
+    double max_acc_angular_{0.1}; // rad/s^2
+    double max_decel_linear_{0.04}; // m/s^2
+    double max_decel_angular_{0.2}; // rad/s^2
+    double curvature_weight_{0.2}; // weight for curvature in cost function
     rclcpp::Duration transform_tolerance_{rclcpp::Duration::from_seconds(0.1)};
+
+    // Record last cmd_vel
+    double last_linear_vel_{0.0};
+    double last_angular_vel_{0.0};
+    rclcpp::Time last_time_;
 
     // Plan
     nav_msgs::msg::Path global_plan_;
