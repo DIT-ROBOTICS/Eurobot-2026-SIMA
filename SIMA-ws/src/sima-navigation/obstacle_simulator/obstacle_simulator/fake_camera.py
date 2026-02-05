@@ -45,7 +45,7 @@ class FakeCamera(Node):
         all_points = []
 
         # --- 1. Create first obstacle: 10cm box at (1.5, 0.5) ---
-        box1 = self.create_square_obstacle(1.5, 0.5, 0.1)
+        box1 = self.create_square_obstacle(1.5, 1.1, 0.2)
         all_points.extend(box1)
 
         # --- 2. Create second obstacle: 20cm box at (1.5, 1.0) ---

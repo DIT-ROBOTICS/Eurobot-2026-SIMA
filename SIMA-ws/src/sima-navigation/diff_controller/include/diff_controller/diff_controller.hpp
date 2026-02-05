@@ -82,6 +82,9 @@ private:
     double last_angular_vel_{0.0};
     rclcpp::Time last_time_;
 
+    // Helper functions
+    double findMaxCurvature(const nav_msgs::msg::Path & transformed_plan, size_t lookahead_index);
+
     // Plan
     nav_msgs::msg::Path global_plan_;
     
