@@ -13,6 +13,9 @@ services:
     stdin_open: true
     stop_grace_period: &STOP_GRACE_PERIOD 1s
 
+    devices:
+      - "/dev:/dev"
+
     volumes:
       - ../SIMA-ws:/home/user/SIMA-ws
       - /tmp/.X11-unix:/tmp/.X11-unix
@@ -31,4 +34,4 @@ services:
       - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
       - ROS_DOMAIN_ID=51  # ! Please distinguish the domain ID with other containers
       # - CYCLONEDDS_URI=file:///home/user/cyclonedds.xml
-    entrypoint: ["/home/${USERNAME}/entrypoint.sh"]
+    # entrypoint: ["/home/user/entrypoint.sh"]
