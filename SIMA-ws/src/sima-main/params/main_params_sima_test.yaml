@@ -1,0 +1,12 @@
+sima_navigator:
+  ros__parameters:
+    use_sim_time: True
+    start_pose_tolerance: 0.05 # the range to consider "at starting point"
+    start_delay_seconds: 1.0 # seconds to wait at start position before beginning navigation
+    # start position 1:
+    start_point_1: [2.65, 1.02]
+    waypoints_1: [1.5, 0.8, 1.75, 1.35, 0.8, 0.8] # [x1, y1, x2, y2, x3, y3, ...]
+
+    # start position 2:
+    start_point_2: [1.0, 0.5]
+    waypoints_2: [1.5, 0.8, 2.0, 0.7]
