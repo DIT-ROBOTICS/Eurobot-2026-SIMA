@@ -26,11 +26,11 @@ def generate_launch_description():
     #     params_file_name = 'main_params_sima_001.yaml'
 
     # Create the launch configuration variables
-    params_file = LaunchConfiguration('params_file')
+    mission_params_file = LaunchConfiguration('mission_params_file')
 
     # Declare the launch arguments
     declare_params_file_cmd = DeclareLaunchArgument(
-        'params_file',
+        'mission_params_file',
         default_value = os.path.join(pkg_dir, 'params', params_file_name),
         description='Path to the parameters file for main'
     )
@@ -59,7 +59,7 @@ def generate_launch_description():
         executable='sima_navigator',
         name='sima_navigator',
         output='screen',
-        parameters=[params_file]
+        parameters=[mission_params_file]
     )
 
     ld = LaunchDescription()
