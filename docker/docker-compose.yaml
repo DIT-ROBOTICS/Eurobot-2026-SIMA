@@ -31,3 +31,4 @@ services:
       - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
       - ROS_DOMAIN_ID=51  # ! Please distinguish the domain ID with other containers
       # - CYCLONEDDS_URI=file:///home/user/cyclonedds.xml
+    entrypoint: ["/home/${USERNAME}/entrypoint.sh"]
