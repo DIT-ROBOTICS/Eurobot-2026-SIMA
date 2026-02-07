@@ -22,13 +22,10 @@ RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloa
 RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     apt-get update && apt-get install -y \
     sudo \
-    vim \
     curl \
     wget \
     tmux \
     htop \
-    git \
-    git-extras \
     gnupg2 \
     net-tools \
     build-essential \
@@ -88,11 +85,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     ros-$ROS_DISTRO-teleop-twist-joy && \
     rm -rf /var/lib/apt/lists/*
 
-# # Install zenoh-bridge-ros2dds
-# RUN curl -L https://download.eclipse.org/zenoh/debian-repo/zenoh-public-key | sudo gpg --dearmor --yes --output /etc/apt/keyrings/zenoh-public-key.gpg && \
-#     echo "deb [signed-by=/etc/apt/keyrings/zenoh-public-key.gpg] https://download.eclipse.org/zenoh/debian-repo/ /" | sudo tee -a /etc/apt/sources.list > /dev/null && \
-#     apt-get update && \
-#     apt-get -y install zenoh-bridge-ros2dds
+# change the permission of the uart port
+RUN chmod 666 /dev/ttyAMA0
 
 # Create a non-root user to use the container
 RUN groupadd --gid ${USERGID} ${USERNAME} \
@@ -110,7 +104,7 @@ WORKDIR /home/${USERNAME}
 COPY ./settings/.bashrc /home/${USERNAME}/.bashrc 
 COPY ./settings/tf2_sensor_msgs.hpp /opt/ros/$ROS_DISTRO/include/tf2_sensor_msgs/tf2_sensor_msgs.hpp
 COPY ./settings/cyclonedds.xml /home/${USERNAME}/cyclonedds.xml
-
+COPY ./script/entrypoint.sh /home/${USERNAME}/entrypoint.sh
 
 RUN sudo apt autoremove -y && \
     sudo apt clean -y
