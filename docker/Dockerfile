@@ -32,6 +32,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     cmake \
     locales \
     python3-pip \
+    dos2unix \
     python3-setuptools && \
     rm -rf /var/lib/apt/lists/*
 
@@ -85,9 +86,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     ros-$ROS_DISTRO-teleop-twist-joy && \
     rm -rf /var/lib/apt/lists/*
 
-# change the permission of the uart port
-RUN chmod 666 /dev/ttyAMA0
-
 # Create a non-root user to use the container
 RUN groupadd --gid ${USERGID} ${USERNAME} \
     && useradd --uid ${USERID} --gid ${USERGID} -m ${USERNAME} -s /bin/bash \
@@ -105,6 +103,7 @@ COPY ./settings/.bashrc /home/${USERNAME}/.bashrc
 COPY ./settings/tf2_sensor_msgs.hpp /opt/ros/$ROS_DISTRO/include/tf2_sensor_msgs/tf2_sensor_msgs.hpp
 COPY ./settings/cyclonedds.xml /home/${USERNAME}/cyclonedds.xml
 COPY ./script/entrypoint.sh /home/${USERNAME}/entrypoint.sh
+RUN sudo chmod +x /home/user/entrypoint.sh
 
 RUN sudo apt autoremove -y && \
     sudo apt clean -y
