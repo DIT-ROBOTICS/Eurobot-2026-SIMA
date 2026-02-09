@@ -7,6 +7,9 @@ topics:
   sima_1/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
     reversed: True
+  /domain/test:
+    type: std_msgs/msg/Bool
+    reversed: True
   # # Bridge "/clock" topic from doman ID 2 to domain ID 3
   # clock:
   #   type: rosgraph_msgs/msg/Clock
