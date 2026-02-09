@@ -6,90 +6,73 @@ topics:
   # Bridge "/bot2/pose/global"
   sima_1/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    reversed: True
   
   # Bridge sima_1/pose/global to multiple domains
   sima_1/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    reversed: True
     to_domain: 51
 
   sima_1/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    reversed: True
     to_domain: 52
 
   sima_1/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    reversed: True
     to_domain: 53
 
   sima_1/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    reversed: True
     to_domain: 54  
   
   # Bridge sima_2/pose/global to multiple domains
   sima_2/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    reversed: True
     to_domain: 51
 
   sima_2/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    reversed: True
     to_domain: 52
 
   sima_2/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    reversed: True
     to_domain: 53
 
   sima_2/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    reversed: True
     to_domain: 54  
   
   # Bridge sima_3/pose/global to multiple domains
   sima_3/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    reversed: True
     to_domain: 51
 
   sima_3/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    reversed: True
     to_domain: 52
 
   sima_3/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    reversed: True
     to_domain: 53
 
   sima_3/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    reversed: True
     to_domain: 54  
   
   # Bridge sima_4/pose/global to multiple domains
   sima_4/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    reversed: True
     to_domain: 51
 
   sima_4/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    reversed: True
     to_domain: 52
 
   sima_4/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    reversed: True
     to_domain: 53
 
   sima_4/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    reversed: True
     to_domain: 54  
   
   # Bridge start signal topic to multiple domains
