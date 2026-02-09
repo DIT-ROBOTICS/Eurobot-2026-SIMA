@@ -39,8 +39,8 @@ private:
     std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
 
     std::vector<SensorConfig> sensors_;
-    double trigger_distance_ = 0.5; // less than this distance is considered an obstacle
-    double min_valid_dist_ = 0.02;  // minimum valid distance (to filter noise in order to avoid affecting by itself)
+    double trigger_distance_ = 0.4; // less than this distance is considered an obstacle
+    double min_valid_dist_ = 0.05;  // minimum valid distance (to filter noise in order to avoid affecting by itself)
 };
 
 #endif // VL53_BRIDGE_HPP_

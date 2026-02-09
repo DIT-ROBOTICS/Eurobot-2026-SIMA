@@ -1,4 +1,5 @@
 #include "navigation2_run/vl53_bridge.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 // transform degree to radian
 constexpr double deg2rad(double deg) {
@@ -34,9 +35,9 @@ void VL53Bridge::loadParameters()
     // default sensor configurations
     // [0:Left, 1:Center, 2:Right]
     sensors_ = {
-        {"Left",   0.075,  0.075, deg2rad(45.0)},
-        {"Center", 0.075,  0.0,   deg2rad(0.0)},
-        {"Right",  0.075, -0.075, deg2rad(-45.0)}
+        {"Left",   0.04867,  0.03152, deg2rad(33.57)},
+        {"Center", 0.053,  0.0,   deg2rad(0.0)},
+        {"Right",  0.04867, -0.03152, deg2rad(-33.57)}
     };
 
     // TODO: read param file to override default sensor configs
@@ -70,6 +71,7 @@ void VL53Bridge::rawDataCallback(const std_msgs::msg::Float32MultiArray::SharedP
 
     // 4. iterate each sensor
     for (size_t i = 0; i < sensors_.size(); ++i) {
+        if (i == 0) continue;   // disable left sensor
         float dist = msg->data[i];
 
         // check if it is a valid obstacle
@@ -118,6 +120,71 @@ void VL53Bridge::rawDataCallback(const std_msgs::msg::Float32MultiArray::SharedP
     // Even if there are no obstacles, consider whether to publish an empty message (depending on your SensorLayer logic)
     // Here we choose: always publish, so the monitoring side knows the node is alive
     pub_obstacles_->publish(output_msg);
+
+
+
+
+
+
+    // // 1. 鎖定感測器數據的時間戳 (這是關鍵！)
+    // // 因為 Float32MultiArray 沒有 header，我們假設收到當下就是觀測時間
+    // rclcpp::Time sensor_time = this->now();
+
+    // geometry_msgs::msg::PoseArray output_msg;
+    // output_msg.header.stamp = sensor_time; // 輸出訊息跟隨感測器時間
+    // output_msg.header.frame_id = "map";
+
+    // // 2. 等待 TF (LookupTransform with Timeout)
+    // // 我們不能用 transform() 直接轉，因為它預設不支援 timeout
+    // // 我們需要等待定位系統 (EKF/Camera) 發布這個時間點的 TF，這通常需要幾毫秒到幾百毫秒
+    // geometry_msgs::msg::TransformStamped transform_stamped;
+    // try {
+    //     // 設定等待時間 (例如 0.2秒)，這取決於你的定位延遲有多大
+    //     // 如果定位系統延遲超過這個時間，這幀數據就會被捨棄，避免畫錯
+    //     transform_stamped = tf_buffer_->lookupTransform(
+    //         "map", "base_link",
+    //         sensor_time,
+    //         rclcpp::Duration::from_seconds(0.2)); 
+    // } catch (const tf2::TransformException & ex) {
+    //     // 如果等不到 TF (定位太慢或斷了)，就跳過這一次
+    //     RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1000, 
+    //         "Wait for TF failed (latency too high?): %s", ex.what());
+    //     return;
+    // }
+
+    // // 3. 遍歷每個感測器並轉換
+    // for (size_t i = 0; i < sensors_.size(); ++i) {
+    //     if (i == 0) continue; // disable left sensor
+    //     float dist = msg->data[i];
+
+    //     if (dist > min_valid_dist_ && dist < trigger_distance_) {
+    //         const auto& sensor = sensors_[i];
+
+    //         // A. 計算 base_link 上的局部座標
+    //         double local_x = sensor.x_offset + dist * std::cos(sensor.yaw_angle);
+    //         double local_y = sensor.y_offset + dist * std::sin(sensor.yaw_angle);
+
+    //         // B. 準備轉換的點
+    //         // 注意：這裡不需要再填 stamp，因為我們會用上面拿到的 transform_stamped 直接算
+    //         geometry_msgs::msg::PointStamped point_in_base;
+    //         point_in_base.point.x = local_x;
+    //         point_in_base.point.y = local_y;
+    //         point_in_base.point.z = 0.0;
+
+    //         // C. 執行座標轉換 (使用 tf2::doTransform)
+    //         geometry_msgs::msg::PointStamped point_in_map;
+    //         tf2::doTransform(point_in_base, point_in_map, transform_stamped);
+
+    //         // D. 加入輸出列表
+    //         geometry_msgs::msg::Pose pose_map;
+    //         pose_map.position = point_in_map.point;
+    //         pose_map.orientation.w = 1.0;
+    //         output_msg.poses.push_back(pose_map);
+    //     }
+    // }
+
+    // // 4. 發布
+    // pub_obstacles_->publish(output_msg);
 }
 
 int main(int argc, char ** argv)

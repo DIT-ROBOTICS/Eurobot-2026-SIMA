@@ -270,10 +270,10 @@ global_costmap:
       sensor_layer:
         plugin: "Sensor_costmap_plugin::SensorLayer"
         enabled: True
-        obstacle_radius: 0.08
-        inflation_radius: 0.21
+        obstacle_radius: 0.02
+        inflation_radius: 0.16
         cost_scaling_factor: 2.0
-        obstacle_lifespan: 5.0
+        obstacle_lifespan: 4.0
         sima_id: 1
         # pantry range
         # ignore_zone_array: [min_x, min_y, max_x, max_y]
