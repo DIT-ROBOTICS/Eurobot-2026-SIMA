@@ -1,15 +1,24 @@
 # Name of the domain bridge, used for node naming and logging
 name: my_bridge
 from_domain: 51
-to_domain: 14
+to_domain: 12
 topics:
   # Bridge "/bot2/pose/global"
   sima_1/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
     reversed: True
-  /domain/test:
+
+  robot/startup/are_you_ready:
     type: std_msgs/msg/Bool
-    reversed: True
+    from_domain: 51
+    to_domain: 11
+    bidirectional: True
+services:
+  robot/startup/ready_signal:
+    type: btcpp_ros2_interfaces/srv/StartUpSrv
+    from_domain: 51
+    to_domain: 11
+    bidirectional: True
   # # Bridge "/clock" topic from doman ID 2 to domain ID 3
   # clock:
   #   type: rosgraph_msgs/msg/Clock
