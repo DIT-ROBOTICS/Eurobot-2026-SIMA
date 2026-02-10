@@ -9,8 +9,8 @@ import os
 def generate_launch_description():
     
     # Get the package share directory
-    package_share_dir = get_package_share_directory('sima-package_launching')
-    config_file_path = os.path.join(package_share_dir, 'config', 'domain_bridge-config-A.yaml')
+    package_share_dir = get_package_share_directory('domain_bridge')
+    config_file_path = os.path.join(package_share_dir, 'config', 'domain_bridge-config.yaml')
       
     config_arg = DeclareLaunchArgument(
         "config", 

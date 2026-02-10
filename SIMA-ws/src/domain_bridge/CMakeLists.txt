@@ -129,6 +129,10 @@ install(DIRECTORY examples launch
   DESTINATION share/${PROJECT_NAME}
 )
 
+install(DIRECTORY config launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
 ament_export_targets(export_${PROJECT_NAME})
 ament_export_dependencies(
   rclcpp
