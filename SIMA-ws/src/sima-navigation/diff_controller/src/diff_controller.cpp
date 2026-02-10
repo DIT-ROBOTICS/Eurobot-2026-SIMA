@@ -497,7 +497,7 @@ namespace diff_controller
             target_linear_vel = 0.0;
             
             // Use p control
-            target_angular_vel = 0.75 * heading_kp_ * heading_error;
+            target_angular_vel = 0.8 * heading_kp_ * heading_error;
             
             // Limit max angular velocity
             target_angular_vel = clampAbs(target_angular_vel, max_angular_vel_);
@@ -517,7 +517,7 @@ namespace diff_controller
             
             // B. 基於曲率的速度限制 (Curvature Slowdown)
             // 公式： v = v_des / (1 + w * k)
-            double curvature_slowdown_factor = 0.7; // 可調整係數，越大過彎越慢
+            double curvature_slowdown_factor = 0.5; // 可調整係數，越大過彎越慢
             double regulated_linear_vel = desired_linear_vel_ / (1.0 + curvature_slowdown_factor * max_curvature_ahead);
 
             // C. 基於 Heading Error 的速度限制 (Heading Slowdown)
@@ -525,7 +525,7 @@ namespace diff_controller
             if (std::abs(heading_error) > heading_slowdown_threshold_) {
                  double heading_scale = 1.0 - (std::abs(heading_error) - heading_slowdown_threshold_) / 
                                               std::max(heading_rotate_threshold_ - heading_slowdown_threshold_, 1e-6);
-                 regulated_linear_vel *= std::clamp(heading_scale, 0.8, 1.0);
+                 regulated_linear_vel *= std::clamp(heading_scale, 0.7, 1.0);
             }
 
             // D. 靠近終點減速 (Approach Slowdown)
