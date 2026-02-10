@@ -22,6 +22,8 @@
 #include "domain_bridge/parse_domain_bridge_yaml_config.hpp"
 #include "domain_bridge/process_cmd_line_arguments.hpp"
 
+#include "btcpp_ros2_interfaces/srv/start_up_srv.hpp"
+
 int main(int argc, char ** argv)
 {
   auto arguments = rclcpp::init_and_remove_ros_arguments(argc, argv);
@@ -31,6 +33,10 @@ int main(int argc, char ** argv)
     return config_rc_pair.second;
   }
   domain_bridge::DomainBridge domain_bridge(*config_rc_pair.first);
+
+  // bridge static service (if you want to add new service, follow the format below to add new static service bridge)
+  domain_bridge::DomainBridge service_bridge;
+  service_bridge.bridge_service<btcpp_ros2_interfaces::srv::StartUpSrv>("/robot/startup/ready_signal", 11, 51);
 
   // Add component manager node and domain bridge to single-threaded executor
   auto executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
