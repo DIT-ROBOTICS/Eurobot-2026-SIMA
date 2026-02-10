@@ -26,6 +26,7 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
 find_package(zstd_vendor REQUIRED)
 find_package(zstd REQUIRED)
+find_package(btcpp_ros2_interfaces REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   msg/CompressedMsg.msg
@@ -59,6 +60,7 @@ ament_target_dependencies(${PROJECT_NAME}_lib
   rosidl_typesupport_cpp
   yaml_cpp_vendor
   zstd
+  btcpp_ros2_interfaces
 )
 
 rosidl_get_typesupport_target(cpp_typesupport_target
