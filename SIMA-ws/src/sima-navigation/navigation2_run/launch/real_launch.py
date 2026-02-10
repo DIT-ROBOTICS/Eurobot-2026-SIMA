@@ -35,7 +35,7 @@ def generate_launch_description():
     ros_domain_id = os.getenv('ROS_DOMAIN_ID')
 
     params_file_name = 'nav2_params_sima.yaml'
-    print('[INFO] [sim_launch] Use nav2_params_sima.yaml')
+    print('[INFO] [real_launch] Use nav2_params_sima.yaml')
 
     # if ros_domain_id == '11':
     #     params_file_name = 'nav2_params_11.yaml'
@@ -207,6 +207,6 @@ def generate_launch_description():
     ld.add_action(final_pose_bridge_cmd)
 
     # Add the system check node
-    ld.add_action(system_check_cmd)
+    # ld.add_action(system_check_cmd)
 
     return ld
