@@ -168,13 +168,13 @@ def generate_launch_description():
         parameters=[{'trigger_distance': 0.4} , {'use_sim_time': use_sim_time}]
     )
 
-    sima_navigator_cmd = Node(
-        package='sima_mission_controller',
-        executable='sima_navigator',
-        name='sima_navigator',
-        output='screen',
-        parameters=[params_file],
-    )
+    # sima_navigator_cmd = Node(
+    #     package='sima_mission_controller',
+    #     executable='sima_navigator',
+    #     name='sima_navigator',
+    #     output='screen',
+    #     parameters=[params_file],
+    # )
 
     # Create the launch description and populate
     ld = LaunchDescription()
@@ -201,7 +201,7 @@ def generate_launch_description():
     # ld.add_action(rviz_cmd)
     ld.add_action(bringup_cmd)
     ld.add_action(vl53_bridge_cmd)
-    ld.add_action(sima_navigator_cmd)
+    # ld.add_action(sima_navigator_cmd)
 
     # Add the final pose bridge node
     ld.add_action(final_pose_bridge_cmd)
