@@ -51,33 +51,61 @@ void SensorLayer::onInitialize()
     sub_ = node->create_subscription<geometry_msgs::msg::PoseArray>(
         "/sensors/detected_obstacles", 10,
         std::bind(&SensorLayer::poseArrayCallback, this, std::placeholders::_1));
-  
-    // TODO: Subscribe to other simas' pose topics
-    sima1_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-        "/sima_1/pose/global", 10,
-        [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
-            // Callback body can be empty; we just need the subscription to exist
-            this->sima1_pose_ = msg->pose.pose;
-        });
-    sima2_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-        "/sima_2/pose/global", 10,
-        [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
-            // Callback body can be empty; we just need the subscription to exist
-            this->sima2_pose_ = msg->pose.pose;
-        });
-    sima3_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-        "/sima_3/pose/global", 10,
-        [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
-            // Callback body can be empty; we just need the subscription to exist
-            this->sima3_pose_ = msg->pose.pose;
-        });
-    sima4_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-        "/sima_4/pose/global", 10,
-        [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
-            // Callback body can be empty; we just need the subscription to exist
-            this->sima4_pose_ = msg->pose.pose;
-        });
-
+    
+    if (sima_id_ >= 1 && sima_id_ <= 4) {
+        // TODO: Subscribe to other simas' pose topics
+        sima1_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+            "/sima_1/pose/global", 10,
+            [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
+                // Callback body can be empty; we just need the subscription to exist
+                this->sima1_pose_ = msg->pose.pose;
+            });
+        sima2_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+            "/sima_2/pose/global", 10,
+            [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
+                // Callback body can be empty; we just need the subscription to exist
+                this->sima2_pose_ = msg->pose.pose;
+            });
+        sima3_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+            "/sima_3/pose/global", 10,
+            [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
+                // Callback body can be empty; we just need the subscription to exist
+                this->sima3_pose_ = msg->pose.pose;
+            });
+        sima4_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+            "/sima_4/pose/global", 10,
+            [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
+                // Callback body can be empty; we just need the subscription to exist
+                this->sima4_pose_ = msg->pose.pose;
+            });
+    }
+    else if (sima_id_ >= 11 && sima_id_ <= 14) {
+        sima_id_ -= 10; // Map 11->1, 12->2, etc.
+        sima1_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+            "/sima_11/pose/global", 10,
+            [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
+                // Callback body can be empty; we just need the subscription to exist
+                this->sima1_pose_ = msg->pose.pose;
+            });
+        sima2_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+            "/sima_12/pose/global", 10,
+            [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
+                // Callback body can be empty; we just need the subscription to exist
+                this->sima2_pose_ = msg->pose.pose;
+            });
+        sima3_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+            "/sima_13/pose/global", 10,
+            [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
+                // Callback body can be empty; we just need the subscription to exist
+                this->sima3_pose_ = msg->pose.pose;
+            });
+        sima4_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+            "/sima_14/pose/global", 10,
+            [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
+                // Callback body can be empty; we just need the subscription to exist
+                this->sima4_pose_ = msg->pose.pose;
+            });
+    }
     
     RCLCPP_INFO(node->get_logger(), "SensorLayer (Persistent Mode) Initialized!");
 }
