@@ -2,7 +2,7 @@
 #include "pluginlib/class_list_macros.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 
-PLUGINLIB_EXPORT_CLASS(SIMA_costmap_plugin::SIMALayer, nav2_costmap_2d::CostmapLayer)
+PLUGINLIB_EXPORT_CLASS(SIMA_costmap_plugin::SIMALayer, nav2_costmap_2d::Layer)
 
 namespace SIMA_costmap_plugin
 {

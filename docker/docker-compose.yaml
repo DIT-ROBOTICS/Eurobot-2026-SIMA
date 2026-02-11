@@ -32,6 +32,6 @@ services:
       - RCUTILS_COLORIZED_OUTPUT=1
       - XAUTHORITY=/home/user/.Xauthority   # Set Xauthority path
       - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-      - ROS_DOMAIN_ID=49  # ! Please distinguish the domain ID with other containers
+      - ROS_DOMAIN_ID=51  # ! Please distinguish the domain ID with other containers
       # - CYCLONEDDS_URI=file:///home/user/cyclonedds.xml
     # entrypoint: ["/home/user/entrypoint.sh"]
