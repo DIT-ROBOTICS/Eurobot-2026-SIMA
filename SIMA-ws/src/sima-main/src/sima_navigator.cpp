@@ -31,8 +31,8 @@ SimaNavigator::SimaNavigator() : Node("sima_navigator")
 
     this->declare_parameter("waypoints", std::vector<double>{1.5, 0.5});
 
-    this->declare_parameter("sprint_duration_sec", 1.0);
-    this->declare_parameter("sprint_speed", 0.5);
+    this->declare_parameter("sprint_duration_sec", 2.0);
+    this->declare_parameter("sprint_speed", 0.4);
     sprint_duration_sec_ = this->get_parameter("sprint_duration_sec").as_double();
     sprint_speed_ = this->get_parameter("sprint_speed").as_double();
 
@@ -41,7 +41,7 @@ SimaNavigator::SimaNavigator() : Node("sima_navigator")
     start_sub_ = this->create_subscription<std_msgs::msg::Int16>(
         "/robot/startup/sima/start", 10, std::bind(&SimaNavigator::startCallback, this, std::placeholders::_1));
     
-    cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
+    cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel_nav", 10);
 
     // Subscribe to Global Costmap
     rclcpp::QoS map_qos(1);
@@ -98,7 +98,7 @@ void SimaNavigator::controlLoop()
         if (elapsed.seconds() < sprint_duration_sec_) {
             // Publish sprinting velocity
             geometry_msgs::msg::Twist cmd_vel;
-            cmd_vel.linear.x = sprint_speed_;
+            cmd_vel.linear.x = sprint_speed_ * (elapsed.seconds() / sprint_duration_sec_ * 0.7 + 0.3);
             cmd_vel.angular.z = 0.0;
             cmd_vel_pub_->publish(cmd_vel);
         } else {
@@ -113,7 +113,7 @@ void SimaNavigator::controlLoop()
 void SimaNavigator::stopRobot()
 {
     geometry_msgs::msg::Twist cmd_vel;
-    cmd_vel.linear.x = 0.0;
+    cmd_vel.linear.x = 0.1;
     cmd_vel.angular.z = 0.0;
     cmd_vel_pub_->publish(cmd_vel);
 }
@@ -359,6 +359,7 @@ void SimaNavigator::feedbackCallback(GoalHandleNav::SharedPtr, const std::shared
 void SimaNavigator::resultCallback(const GoalHandleNav::WrappedResult & result)
 {
     is_navigating_ = false;
+    current_state_ = State::IDLE;
     switch (result.code) {
         case rclcpp_action::ResultCode::SUCCEEDED:
             RCLCPP_INFO(this->get_logger(), "Mission Completed Successfully!");
