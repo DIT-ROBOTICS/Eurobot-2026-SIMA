@@ -44,7 +44,7 @@ def generate_launch_description():
     )
     
     domain_bridge_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(get_package_share_directory('sima-package_launching'), 'launch', 'domain_bridge_test.launch.py')),
+        PythonLaunchDescriptionSource(os.path.join(get_package_share_directory('domain_bridge'), 'launch', 'domain_bridge.launch.py')),
     )
 
     system_check_cmd = Node(
