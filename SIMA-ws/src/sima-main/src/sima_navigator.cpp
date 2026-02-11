@@ -421,6 +421,11 @@ SimaNavigator::SimaNavigator() : Node("sima_navigator")
     sprint_speed_ = this->get_parameter("sprint_speed").as_double();
     sima_id_ = this->get_parameter("sima_id").as_int();
 
+    this->declare_parameter("sprint_duration_sec", 1.0);
+    this->declare_parameter("sprint_speed", 0.5);
+    sprint_duration_sec_ = this->get_parameter("sprint_duration_sec").as_double();
+    sprint_speed_ = this->get_parameter("sprint_speed").as_double();
+
     // Initialize Subscriptions and Publications
     std::string start_topic = "/sima_" + std::to_string(sima_id_) + "/goal";
     start_sub_ = this->create_subscription<std_msgs::msg::String>(

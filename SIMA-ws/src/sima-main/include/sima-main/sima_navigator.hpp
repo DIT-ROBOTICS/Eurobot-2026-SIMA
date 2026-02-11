@@ -135,7 +135,7 @@ private:
     std::vector<std::pair<double, double>> parseWaypoints(const std::vector<double>& flat_points);
     void controlLoop();
     void stopRobot();
-
+    
     // Action Client Callbacks
     void goalResponseCallback(const GoalHandleNav::SharedPtr & goal_handle);
     void feedbackCallback(GoalHandleNav::SharedPtr, const std::shared_ptr<const NavThroughPoses::Feedback> feedback);
@@ -162,6 +162,11 @@ private:
     double sprint_duration_sec_ = 1.0; // Duration to sprint before switching to navigation
     double sprint_speed_ = 0.5; // Speed to use during sprinting (m/s)
     int sima_id_;
+
+    State current_state_ = State::IDLE;
+    rclcpp::Time sprint_start_time_;
+    double sprint_duration_sec_ = 1.0; // Duration to sprint before switching to navigation
+    double sprint_speed_ = 0.5; // Speed to use during sprinting (m/s)
 
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
