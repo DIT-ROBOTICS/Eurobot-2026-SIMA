@@ -509,7 +509,7 @@ void SimaNavigator::controlLoop()
 void SimaNavigator::stopRobot()
 {
     geometry_msgs::msg::Twist cmd_vel;
-    cmd_vel.linear.x = 0.0;
+    cmd_vel.linear.x = 0.1;
     cmd_vel.angular.z = 0.0;
     cmd_vel_pub_->publish(cmd_vel);
 }
