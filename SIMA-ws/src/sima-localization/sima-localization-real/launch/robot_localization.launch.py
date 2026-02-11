@@ -17,7 +17,7 @@ def generate_launch_description():
 
     if ros_domain_id == '51':
         parameters_file_name = 'dual_ekf-real-1.yaml'
-    elif ros_domain_id == '52':
+    elif ros_domain_id == '50':
         parameters_file_name = 'dual_ekf-real-2.yaml'
     elif ros_domain_id == '53':
         parameters_file_name = 'dual_ekf-real-3.yaml'

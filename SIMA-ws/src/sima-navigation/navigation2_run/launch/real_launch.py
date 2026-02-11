@@ -40,7 +40,7 @@ def generate_launch_description():
     if ros_domain_id == '51':
         params_file_name = 'nav2_params_sima_51.yaml'
         print('[INFO] [real_launch] ROS_DOMAIN_ID=51. Use nav2_params_sima_51.yaml')
-    elif ros_domain_id == '52':
+    elif ros_domain_id == '50':
         params_file_name = 'nav2_params_sima_52.yaml'
         print('[INFO] [real_launch] ROS_DOMAIN_ID=52. Use nav2_params_sima_52.yaml')
     elif ros_domain_id == '53':

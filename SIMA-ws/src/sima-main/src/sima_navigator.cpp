@@ -31,8 +31,8 @@ SimaNavigator::SimaNavigator() : Node("sima_navigator")
 
     this->declare_parameter("waypoints", std::vector<double>{1.5, 0.5});
 
-    this->declare_parameter("sprint_duration_sec", 2.0);
-    this->declare_parameter("sprint_speed", 0.4);
+    this->declare_parameter("sprint_duration_sec", 1.8);
+    this->declare_parameter("sprint_speed", 0.35);
     sprint_duration_sec_ = this->get_parameter("sprint_duration_sec").as_double();
     sprint_speed_ = this->get_parameter("sprint_speed").as_double();
 

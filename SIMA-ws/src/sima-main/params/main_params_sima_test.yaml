@@ -10,4 +10,4 @@ sima_navigator:
     # # start position 2:
     # start_point_2: [1.0, 0.5]
     # waypoints_2: [1.5, 0.8, 2.0, 0.7]
-    waypoints: [2.3, 0.8]
+    waypoints: [2.25, 0.85]
