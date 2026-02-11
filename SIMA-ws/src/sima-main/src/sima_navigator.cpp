@@ -31,10 +31,17 @@ SimaNavigator::SimaNavigator() : Node("sima_navigator")
 
     this->declare_parameter("waypoints", std::vector<double>{1.5, 0.5});
 
+    this->declare_parameter("sprint_duration_sec", 1.0);
+    this->declare_parameter("sprint_speed", 0.5);
+    sprint_duration_sec_ = this->get_parameter("sprint_duration_sec").as_double();
+    sprint_speed_ = this->get_parameter("sprint_speed").as_double();
+
     // Initialize Subscriptions and Publications
     // Trigger topic: "ros2 topic pub /start_sima std_msgs/msg/Bool '{data: true}' -1"
     start_sub_ = this->create_subscription<std_msgs::msg::Int16>(
         "/robot/startup/sima/start", 10, std::bind(&SimaNavigator::startCallback, this, std::placeholders::_1));
+    
+    cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
 
     // Subscribe to Global Costmap
     rclcpp::QoS map_qos(1);
@@ -49,6 +56,10 @@ SimaNavigator::SimaNavigator() : Node("sima_navigator")
     // Nav2 Action Client
     nav_client_ = rclcpp_action::create_client<NavThroughPoses>(this, "navigate_through_poses");
 
+    timer_ = this->create_wall_timer(20ms, std::bind(&SimaNavigator::controlLoop, this));
+
+    current_state_ = State::IDLE;
+
     RCLCPP_INFO(this->get_logger(), "=== SIMA Navigator Ready. Waiting for /start_sima ===");
 }
 
@@ -58,17 +69,53 @@ void SimaNavigator::costmapCallback(const nav_msgs::msg::OccupancyGrid::SharedPt
     latest_costmap_ = msg;
 }
 
+// void SimaNavigator::startCallback(const std_msgs::msg::Int16::SharedPtr msg)
+// {
+//     if (msg->data > 0 && last_start_signal_ == 0) {
+//         if (!is_navigating_) {
+//             RCLCPP_INFO(this->get_logger(), "Received START signal!");
+//             executeMission();
+//         } else {
+//             RCLCPP_WARN(this->get_logger(), "Ignore start signal (already running)");
+//         }
+//     }
+//     last_start_signal_ = msg->data;
+// }
+
 void SimaNavigator::startCallback(const std_msgs::msg::Int16::SharedPtr msg)
 {
-    if (msg->data > 0 && last_start_signal_ == 0) {
-        if (!is_navigating_) {
-            RCLCPP_INFO(this->get_logger(), "Received START signal!");
-            executeMission();
+    if (current_state_ == State::IDLE && msg->data > 0) {
+        RCLCPP_INFO(this->get_logger(), "Received START signal! Starting sprinting phase...");
+        current_state_ = State::SPRINTING;
+        sprint_start_time_ = this->now();
+    }
+}
+
+void SimaNavigator::controlLoop()
+{
+    if (current_state_ == State::SPRINTING) {
+        auto elapsed = this->now() - sprint_start_time_;
+        if (elapsed.seconds() < sprint_duration_sec_) {
+            // Publish sprinting velocity
+            geometry_msgs::msg::Twist cmd_vel;
+            cmd_vel.linear.x = sprint_speed_;
+            cmd_vel.angular.z = 0.0;
+            cmd_vel_pub_->publish(cmd_vel);
         } else {
-            RCLCPP_WARN(this->get_logger(), "Ignore start signal (already running)");
+            stopRobot();
+            RCLCPP_INFO(this->get_logger(), "Sprint phase completed. Starting navigation phase...");
+            current_state_ = State::NAVIGATING;
+            executeMission();
         }
     }
-    last_start_signal_ = msg->data;
+}
+
+void SimaNavigator::stopRobot()
+{
+    geometry_msgs::msg::Twist cmd_vel;
+    cmd_vel.linear.x = 0.0;
+    cmd_vel.angular.z = 0.0;
+    cmd_vel_pub_->publish(cmd_vel);
 }
 
 std::vector<std::pair<double, double>> SimaNavigator::parseWaypoints(const std::vector<double>& flat_points){
