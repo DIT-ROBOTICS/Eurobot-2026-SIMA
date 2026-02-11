@@ -1,0 +1,7 @@
+<library path="sima_layer">
+  <class name="sima_layer/SIMALayer" type="SIMA_costmap_plugin::SIMALayer" base_class_type="nav2_costmap_2d::CostmapLayer">
+    <description>
+      A costmap layer that listens to other robots' positions and marks them as obstacles.
+    </description>
+  </class>
+</library>
