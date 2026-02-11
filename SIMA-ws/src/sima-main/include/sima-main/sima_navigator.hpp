@@ -21,6 +21,13 @@ namespace sima_mission
 class SimaNavigator : public rclcpp::Node
 {
 public:
+    enum class State
+    {
+        IDLE,
+        SPRINTING,
+        NAVIGATING,
+    };
+public:
     using NavThroughPoses = nav2_msgs::action::NavigateThroughPoses;
     using GoalHandleNav = rclcpp_action::ClientGoalHandle<NavThroughPoses>;
 
@@ -37,6 +44,8 @@ private:
     void worldToMap(double wx, double wy, int& mx, int& my);
     void mapToWorld(int mx, int my, double& wx, double& wy);
     std::vector<std::pair<double, double>> parseWaypoints(const std::vector<double>& flat_points);
+    void controlLoop();
+    void stopRobot();
     
     // Action Client Callbacks
     void goalResponseCallback(const GoalHandleNav::SharedPtr & goal_handle);
@@ -49,10 +58,18 @@ private:
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr controller_pub_;
     rclcpp_action::Client<NavThroughPoses>::SharedPtr nav_client_;
 
+    rclcpp::TimerBase::SharedPtr timer_;
+    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
+
     nav_msgs::msg::OccupancyGrid::SharedPtr latest_costmap_;
     std::mutex map_mutex_;
     bool is_navigating_ = false;
     int last_start_signal_ = 0;
+
+    State current_state_ = State::IDLE;
+    rclcpp::Time sprint_start_time_;
+    double sprint_duration_sec_ = 1.0; // Duration to sprint before switching to navigation
+    double sprint_speed_ = 0.5; // Speed to use during sprinting (m/s)
 
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
