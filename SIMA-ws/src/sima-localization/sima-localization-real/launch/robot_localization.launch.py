@@ -11,7 +11,31 @@ from ament_index_python.packages import get_package_share_directory
 def generate_launch_description():
     robot_localization_dir = get_package_share_directory('sima-localization-real')
     parameters_file_dir = os.path.join(robot_localization_dir, 'config')
-    parameters_file_path = os.path.join(parameters_file_dir, 'dual_ekf-real.yaml')
+
+    parameters_file_name = 'dual_ekf-real.yaml'
+    ros_domain_id = os.getenv('ROS_DOMAIN_ID')
+
+    if ros_domain_id == '51':
+        parameters_file_name = 'dual_ekf-real-1.yaml'
+    elif ros_domain_id == '52':
+        parameters_file_name = 'dual_ekf-real-2.yaml'
+    elif ros_domain_id == '53':
+        parameters_file_name = 'dual_ekf-real-3.yaml'
+    elif ros_domain_id == '54':
+        parameters_file_name = 'dual_ekf-real-4.yaml'
+    elif ros_domain_id == '61':
+        parameters_file_name = 'dual_ekf-real-11.yaml'
+    elif ros_domain_id == '62':
+        parameters_file_name = 'dual_ekf-real-12.yaml'
+    elif ros_domain_id == '63':
+        parameters_file_name = 'dual_ekf-real-13.yaml'
+    elif ros_domain_id == '64':
+        parameters_file_name = 'dual_ekf-real-14.yaml'
+    else:
+        parameters_file_name = 'dual_ekf-real.yaml'
+    
+    parameters_file_path = os.path.join(parameters_file_dir, parameters_file_name)
+    
     os.environ['FILE_PATH'] = str(parameters_file_dir)
     return LaunchDescription([
         launch.actions.DeclareLaunchArgument(

@@ -1,12 +1,91 @@
 # Name of the domain bridge, used for node naming and logging
 name: my_bridge
-from_domain: 50
-to_domain: 14
+from_domain: 14
+to_domain: 61
 topics:
-  # Bridge "/bot2/pose/global"
+  # Bridge sima_1/pose/global to multiple domains
   sima_1/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    reversed: True
+    to_domain: 61
+
+  sima_1/pose/global:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    to_domain: 62
+
+  sima_1/pose/global:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    to_domain: 63
+  sima_1/pose/global:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    to_domain: 64  
+  
+  # Bridge sima_2/pose/global to multiple domains
+  sima_2/pose/global:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    to_domain: 61
+
+  sima_2/pose/global:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    to_domain: 62
+
+  sima_2/pose/global:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    to_domain: 63
+
+  sima_2/pose/global:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    to_domain: 64  
+  
+  # Bridge sima_3/pose/global to multiple domains
+  sima_3/pose/global:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    to_domain: 61
+
+  sima_3/pose/global:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    to_domain: 62
+
+  sima_3/pose/global:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    to_domain: 63
+
+  sima_3/pose/global:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    to_domain: 64  
+  
+  # Bridge sima_4/pose/global to multiple domains
+  sima_4/pose/global:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    to_domain: 61
+
+  sima_4/pose/global:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    to_domain: 62
+
+  sima_4/pose/global:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    to_domain: 63
+
+  sima_4/pose/global:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    to_domain: 64  
+  
+  # Bridge start signal topic to multiple domains
+  robot/startup/sima/start:
+    type: std_msgs/msg/Int16
+    to_domain: 61
+  
+  robot/startup/sima/start:
+    type: std_msgs/msg/Int16
+    to_domain: 62
+  
+  robot/startup/sima/start:
+    type: std_msgs/msg/Int16
+    to_domain: 63
+  
+  robot/startup/sima/start:
+    type: std_msgs/msg/Int16
+    to_domain: 64
   # # Bridge "/clock" topic from doman ID 2 to domain ID 3
   # clock:
   #   type: rosgraph_msgs/msg/Clock
