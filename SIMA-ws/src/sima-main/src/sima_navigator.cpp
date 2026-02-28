@@ -622,7 +622,7 @@ void SimaNavigator::executeMission()
     // Send waypoints to Nav2
     RCLCPP_INFO(this->get_logger(), "Sending safe waypoints to Nav2...");
 
-    auto send_goal_options = rclcpp_action::Client<NavThroughPoses>::SendGoalOptions();\
+    auto send_goal_options = rclcpp_action::Client<NavThroughPoses>::SendGoalOptions();
     send_goal_options.goal_response_callback = 
         std::bind(&SimaNavigator::goalResponseCallback, this, std::placeholders::_1);
     send_goal_options.feedback_callback = 
@@ -678,7 +678,7 @@ std::optional<geometry_msgs::msg::PoseStamped> SimaNavigator::findNearestSafePoi
                     int8_t c = latest_costmap_->data[idx];
                    
                     // Found absolutely safe point (Cost == 0)
-                    if (c == 0) {
+                    if (c >= 0 && c < 50) {
                         double safe_wx, safe_wy;
                         mapToWorld(check_x, check_y, safe_wx, safe_wy);
                         pose.pose.position.x = safe_wx;
@@ -738,7 +738,7 @@ void SimaNavigator::resultCallback(const GoalHandleNav::WrappedResult & result)
 {
     is_navigating_ = false;
     current_state_ = State::IDLE;
-    
+
     switch (result.code) {
         case rclcpp_action::ResultCode::SUCCEEDED:
             RCLCPP_INFO(this->get_logger(), "Mission Completed Successfully!");
