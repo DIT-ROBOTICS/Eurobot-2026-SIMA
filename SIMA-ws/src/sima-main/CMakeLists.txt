@@ -24,6 +24,12 @@ add_executable(sima_navigator src/sima_navigator.cpp)
 target_include_directories(sima_navigator PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
+
+add_executable(sima_strategy src/strategy_node.cpp)
+target_include_directories(sima_strategy PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
 add_executable(system_check src/system_check.cpp)
 target_include_directories(system_check PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -40,6 +46,11 @@ ament_target_dependencies(sima_navigator
   tf2_geometry_msgs
 )
 
+ament_target_dependencies(sima_strategy
+  rclcpp
+  std_msgs
+)
+
 ament_target_dependencies(system_check
   rclcpp
   rclcpp_action
@@ -51,11 +62,9 @@ ament_target_dependencies(system_check
 
 install(TARGETS 
   sima_navigator
+  sima_strategy
   system_check
   DESTINATION lib/${PROJECT_NAME})
-
-install(DIRECTORY launch
-  DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
