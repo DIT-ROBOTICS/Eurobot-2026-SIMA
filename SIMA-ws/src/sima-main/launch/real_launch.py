@@ -17,13 +17,15 @@ def generate_launch_description():
     launch_dir = os.path.join(pkg_dir, 'launch')
     ros_domain_id = os.getenv('ROS_DOMAIN_ID')
 
-    params_file_name = 'main_params_sima_test.yaml'
+    params_file_name = 'main_params_sima_A.yaml'
 
     # If needed different params file, change to the following logic
-    # if ros_domain_id == '50':  # sima-test
-    #     params_file_name = 'main_params_sima_test.yaml'
-    # elif ros_domain_id == '51':  # sima-001
-    #     params_file_name = 'main_params_sima_001.yaml'
+    if ros_domain_id == '51' or ros_domain_id == '52' or ros_domain_id == '53' or ros_domain_id == '54':  # sima-001 to sima-004
+        params_file_name = 'main_params_sima_A.yaml'
+    elif ros_domain_id == '61' or ros_domain_id == '62' or ros_domain_id == '63' or ros_domain_id == '64':  # sima-011 to sima-014
+        params_file_name = 'main_params_sima_B.yaml'
+    else:
+        params_file_name = 'main_params_sima_A.yaml'  # default
 
     # Create the launch configuration variables
     mission_params_file = LaunchConfiguration('mission_params_file')
@@ -38,11 +40,11 @@ def generate_launch_description():
     localization_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(get_package_share_directory('sima-localization-real'), 'launch', 'robot_localization.launch.py')),
     )
-    
+
     navigation_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(get_package_share_directory('navigation2_run'), 'launch', 'real_launch.py')),
     )
-    
+
     domain_bridge_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(get_package_share_directory('domain_bridge'), 'launch', 'domain_bridge.launch.py')),
     )
@@ -62,6 +64,14 @@ def generate_launch_description():
         parameters=[mission_params_file]
     )
 
+    strategy_node_cmd = Node(
+        package='sima-main',
+        executable='sima_strategy',
+        name='sima_strategy',
+        output='screen',
+        parameters=[mission_params_file]
+    )
+
     ld = LaunchDescription()
 
     ld.add_action(declare_params_file_cmd)
@@ -71,5 +81,9 @@ def generate_launch_description():
     ld.add_action(domain_bridge_cmd)
     ld.add_action(system_check_cmd)
     ld.add_action(sima_navigator_cmd)
+
+    if ros_domain_id == '51' or ros_domain_id == '61':  # sima-001 and sima-011
+        print ("Launching strategy node for sima-001 or sima-011")
+        ld.add_action(strategy_node_cmd)
 
     return ld
