@@ -115,6 +115,7 @@ public:
         DELAYING,
         SPRINTING,
         NAVIGATING,
+        END,
     };
 public:
     using NavThroughPoses = nav2_msgs::action::NavigateThroughPoses;
