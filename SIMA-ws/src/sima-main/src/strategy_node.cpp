@@ -1,4 +1,4 @@
-#include "sima-main/sima_strategy_node.hpp" 
+#include "sima-main/strategy_node.hpp" 
 #include <algorithm>
 
 namespace sima_strategy

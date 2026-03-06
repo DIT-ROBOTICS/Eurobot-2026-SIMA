@@ -11,7 +11,7 @@ sima_navigator:
     pantry_E_waypoints: [0.5, 0.0, 1.0, 0.0]
     pantry_F_waypoints: [0.5, 0.0, 1.0, 0.0]
     pantry_G_waypoints: [0.5, 0.0, 1.0, 0.0]
-    pantry_H_waypoints: [0.5, 0.0, 1.0, 0.0]
+    pantry_H_waypoints: [2.25, 0.85]
     pantry_I_waypoints: [0.5, 0.0, 1.0, 0.0]
     pantry_J_waypoints: [0.5, 0.0, 1.0, 0.0]
 
@@ -26,6 +26,6 @@ sima_strategy:
     pantry_E_time: 8.0
     pantry_F_time: 6.0
     pantry_G_time: 7.0
-    pantry_H_time: 9.0
+    pantry_H_time: 7.55
     pantry_I_time: 4.0
     pantry_J_time: 3.0
