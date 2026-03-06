@@ -414,12 +414,7 @@ SimaNavigator::SimaNavigator() : Node("sima_navigator")
 
     // Declare Parameters
     this->declare_parameter("start_delay_seconds", 0.0);
-    this->declare_parameter("sprint_duration_sec", 1.0);
-    this->declare_parameter("sprint_speed", 0.5);
     this->declare_parameter("sima_id", 1);
-    sprint_duration_sec_ = this->get_parameter("sprint_duration_sec").as_double();
-    sprint_speed_ = this->get_parameter("sprint_speed").as_double();
-    sima_id_ = this->get_parameter("sima_id").as_int();
 
     this->declare_parameter("sprint_duration_sec", 2.0);
     this->declare_parameter("sprint_speed", 0.4);
