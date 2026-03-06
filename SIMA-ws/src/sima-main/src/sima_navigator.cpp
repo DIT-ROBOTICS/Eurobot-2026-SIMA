@@ -751,7 +751,7 @@ void SimaNavigator::feedbackCallback(GoalHandleNav::SharedPtr, const std::shared
 void SimaNavigator::resultCallback(const GoalHandleNav::WrappedResult & result)
 {
     is_navigating_ = false;
-    current_state_ = State::IDLE;
+    current_state_ = State::END;
 
     switch (result.code) {
         case rclcpp_action::ResultCode::SUCCEEDED:
