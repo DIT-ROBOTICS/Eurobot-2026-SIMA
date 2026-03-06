@@ -267,7 +267,7 @@ global_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 5.0
-        inflation_radius: 0.2
+        inflation_radius: 0.05
       sensor_layer:
         plugin: "Sensor_costmap_plugin::SensorLayer"
         enabled: True
