@@ -9,7 +9,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "std_msgs/msg/int16.hpp"
-#include "std_msgs/msg/int16_multi_array.hpp"
+#include "std_msgs/msg/int32_multi_array.hpp"
 
 // TODO: Ask about camera's topic and message type
 
@@ -37,16 +37,16 @@ public:
 private:
     // Callback function
     void startCallback(const std_msgs::msg::Int16::SharedPtr msg);
-    void pantryStatusCallback(const std_msgs::msg::Int16MultiArray::SharedPtr msg);
+    void pantryStatusCallback(const std_msgs::msg::Int32MultiArray::SharedPtr msg);
 
-    void calculateAndAssign(const std_msgs::msg::Int16MultiArray::SharedPtr msg);
+    void calculateAndAssign(const std_msgs::msg::Int32MultiArray::SharedPtr msg);
 
     // Publishers for sending goals to 4 Simas
     std::map<int, rclcpp::Publisher<std_msgs::msg::String>::SharedPtr> goal_pubs_;
 
     // Subscriber for receiving start signal and pantry status
     rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr start_sub_;
-    rclcpp::Subscription<std_msgs::msg::Int16MultiArray>::SharedPtr pantry_status_sub_;
+    rclcpp::Subscription<std_msgs::msg::Int32MultiArray>::SharedPtr pantry_status_sub_;
 
     // Helper function
     void sortByDistance(std::vector<Pantry>& pantries, std::string order = "ascending");

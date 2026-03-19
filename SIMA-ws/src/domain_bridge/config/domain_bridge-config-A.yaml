@@ -42,19 +42,19 @@ topics:
     to_domain: 54  
   
   # Bridge sima_3/pose/global to multiple domains
-  sima_12/pose/global:
+  sima_3/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
     to_domain: 51
 
-  sima_12/pose/global:
+  sima_3/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
     to_domain: 50
 
-  sima_12/pose/global:
+  sima_3/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
     to_domain: 53
 
-  sima_12/pose/global:
+  sima_3/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
     to_domain: 54  
   
@@ -94,14 +94,14 @@ topics:
 
   # Bridge pantry status topic to sima 1 domain
   /pantry_status:
-    type: std_msgs/msg/Int16MultiArray
+    type: std_msgs/msg/Int32MultiArray
     to_domain: 51
   
   # Bridge goal assignment topic to multiple domains
   /sima_2/goal:
     type: std_msgs/msg/String
     from_domain: 51
-    to_domain: 52
+    to_domain: 50
   
   /sima_3/goal:
     type: std_msgs/msg/String
