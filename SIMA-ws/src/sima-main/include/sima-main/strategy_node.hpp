@@ -39,7 +39,7 @@ private:
     void startCallback(const std_msgs::msg::Int16::SharedPtr msg);
     void pantryStatusCallback(const std_msgs::msg::Int32MultiArray::SharedPtr msg);
 
-    void calculateAndAssign(const std_msgs::msg::Int32MultiArray::SharedPtr msg);
+    void calculateAndAssign();
 
     // Publishers for sending goals to 4 Simas
     std::map<int, rclcpp::Publisher<std_msgs::msg::String>::SharedPtr> goal_pubs_;
@@ -58,6 +58,8 @@ private:
 
     int last_start_signal_ = 0;
     bool has_assigned_ = false;
+
+    std_msgs::msg::Int32MultiArray pantry_status_data_ = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 
 } // namespace sima_strategy

@@ -48,30 +48,52 @@ SimaStrategyNode::SimaStrategyNode() : Node("sima_strategy")
     RCLCPP_INFO(this->get_logger(), "sima_strategy_node initialized.");
 }
 
-void SimaStrategyNode::startCallback(const std_msgs::msg::Int16::SharedPtr msg)
-{
+// version 1
+
+// void SimaStrategyNode::startCallback(const std_msgs::msg::Int16::SharedPtr msg)
+// {
+//     if (last_start_signal_ == 0 && msg->data > 0) {
+//         last_start_signal_ = msg->data;
+//         RCLCPP_INFO(this->get_logger(), "Received start signal: %d", last_start_signal_);
+//     }
+// }
+
+// void SimaStrategyNode::pantryStatusCallback(const std_msgs::msg::Int32MultiArray::SharedPtr msg)
+// {
+//     if (last_start_signal_ > 0 && !has_assigned_) {
+//         RCLCPP_INFO(this->get_logger(), "Received pantry status update. Calculating and assigning targets...");
+//         calculateAndAssign(msg);
+//         has_assigned_ = true; // Ensure we only assign once after receiving the start signal
+//     }
+// }
+
+// version 2 (if not receive pantry status, still have to start when receive start signal)
+
+void SimaStrategyNode::startCallback(const std_msgs::msg::Int16::SharedPtr msg) {
     if (last_start_signal_ == 0 && msg->data > 0) {
         last_start_signal_ = msg->data;
         RCLCPP_INFO(this->get_logger(), "Received start signal: %d", last_start_signal_);
+        calculateAndAssign();
     }
 }
 
-void SimaStrategyNode::pantryStatusCallback(const std_msgs::msg::Int32MultiArray::SharedPtr msg)
-{
-    if (last_start_signal_ > 0 && !has_assigned_) {
-        RCLCPP_INFO(this->get_logger(), "Received pantry status update. Calculating and assigning targets...");
-        calculateAndAssign(msg);
-        has_assigned_ = true; // Ensure we only assign once after receiving the start signal
+void SimaStrategyNode::pantryStatusCallback(const std_msgs::msg::Int32MultiArray::SharedPtr msg){
+    if (last_start_signal_ > 0) {
+        for (size_t i = 0; i < msg->data.size(); i++){
+            pantry_status_data_[i] = msg->data[i];
+            RCLCPP_INFO(this->get_logger(), "Received pantry data %d = %d", i, pantry_status_data_[i]);
+        }
+        RCLCPP_INFO(this->get_logger(), "Received pantry data finished.");
     }
 }
 
-void SimaStrategyNode::calculateAndAssign(const std_msgs::msg::Int32MultiArray::SharedPtr msg)
+void SimaStrategyNode::calculateAndAssign()
 {
     std::vector<Pantry> pantries;
     std::vector<std::string> pantry_names = {"pantry_A", "pantry_B", "pantry_C", "pantry_D", "pantry_E", "pantry_F", "pantry_G", "pantry_H", "pantry_I", "pantry_J"};
 
     for (size_t i = 0; i < pantry_names.size(); ++i) {
-        int status = (i < msg->data.size()) ? msg->data[i] : static_cast<int>(PantryStatus::EMPTY);
+        int status = (i < pantry_status_data_.size()) ? pantry_status_data_[i] : static_cast<int>(PantryStatus::EMPTY);
         
         std::string time_param_name = pantry_names[i] + "_time";
         double time_val = this->get_parameter(time_param_name).as_double();
