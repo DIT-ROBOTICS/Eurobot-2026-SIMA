@@ -63,7 +63,7 @@ def generate_launch_description():
             package='micro_ros_agent', 
             executable='micro_ros_agent', 
             name='micro_ros_agent_serial',
-            arguments=['serial', '--dev', '/dev/ttyAMA0', '-b', '2000000'],
+            arguments=['serial', '--dev', '/dev/ttyAMA0', '-b', '1000000'],
             output='screen',
             ),
     launch_ros.actions.Node(

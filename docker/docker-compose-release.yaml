@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  sima:
+    build: .
+    image: eurobot2026-sima-base:latest
+    container_name: sima
+    command: /bin/bash
+    tty: true
+    network_mode: host
+    ipc: host
+    privileged: true
+    stdin_open: true
+    stop_grace_period: &STOP_GRACE_PERIOD 1s
+
+    devices:
+      - "/dev:/dev"
+
+    volumes:
+      - ../SIMA-ws:/home/user/SIMA-ws
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - $HOME/.Xauthority:/home/user/.Xauthority
+      - /dev:/dev
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+
+    working_dir:
+      /home/user/SIMA-ws
+
+    environment:
+      - DISPLAY=${DISPLAY}  # Set display environment variable
+      - RCUTILS_COLORIZED_OUTPUT=1
+      - XAUTHORITY=/home/user/.Xauthority   # Set Xauthority path
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - ROS_DOMAIN_ID=51  # ! Please distinguish the domain ID with other containers
+      # - CYCLONEDDS_URI=file:///home/user/cyclonedds.xml
+    entrypoint: ["/home/user/entrypoint.sh"]
