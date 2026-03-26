@@ -92,27 +92,6 @@ topics:
     type: std_msgs/msg/Int16
     to_domain: 54
 
-  # Bridge pantry status topic to sima 1 domain
-  /pantry_status:
-    type: std_msgs/msg/Int16MultiArray
-    to_domain: 51
-  
-  # Bridge goal assignment topic to multiple domains
-  /sima_2/goal:
-    type: std_msgs/msg/String
-    from_domain: 51
-    to_domain: 52
-  
-  /sima_3/goal:
-    type: std_msgs/msg/String
-    from_domain: 51
-    to_domain: 53
-  
-  /sima_4/goal:
-    type: std_msgs/msg/String
-    from_domain: 51
-    to_domain: 54
-
   # # Bridge "/clock" topic from doman ID 2 to domain ID 3
   # clock:
   #   type: rosgraph_msgs/msg/Clock

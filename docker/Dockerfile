@@ -1,6 +1,6 @@
 
 # Dockerfile for Nav2 on RPI5(arm64)
-FROM ubuntu:22.04
+FROM ubuntu:22.04 AS base
 
 ARG USERNAME=user
 ARG USERID=1000
@@ -22,17 +22,19 @@ RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloa
 RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     apt-get update && apt-get install -y \
     sudo \
+    vim \
     curl \
     wget \
     tmux \
     htop \
+    git \
+    git-extras \
     gnupg2 \
     net-tools \
     build-essential \
     cmake \
     locales \
     python3-pip \
-    dos2unix \
     python3-setuptools && \
     rm -rf /var/lib/apt/lists/*
 
@@ -42,7 +44,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     chmod +x /tmp/install-ros2.sh && \
     ./tmp/install-ros2.sh && \
     rm /tmp/install-ros2.sh
-
 
 # Install colcon and other Python tools
 RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
@@ -54,7 +55,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     python3-vcstool && \
     rm -rf /var/lib/apt/lists/*
 
-
+FROM base AS build
 # Install Nav2 dependencies and other useful ROS2 packages
 RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     apt-get update && \
@@ -72,7 +73,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     ros-$ROS_DISTRO-geometry-msgs \
     ros-$ROS_DISTRO-test-msgs \
     ros-$ROS_DISTRO-bondcpp \
-    ros-$ROS_DISTRO-foxglove-bridge \
     ros-$ROS_DISTRO-ament-lint-auto \
     ros-$ROS_DISTRO-rmw-cyclonedds-cpp && \
     rm -rf /var/lib/apt/lists/*
@@ -82,20 +82,15 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=private \
     apt-get update && \
     apt-get install -y \
     ros-$ROS_DISTRO-robot-localization \
-    # ros-$ROS_DISTRO-domain-bridge \
+    ros-$ROS_DISTRO-domain-bridge \
     ros-$ROS_DISTRO-teleop-twist-joy && \
     rm -rf /var/lib/apt/lists/*
 
+FROM build AS deploy
 # Create a non-root user to use the container
 RUN groupadd --gid ${USERGID} ${USERNAME} \
     && useradd --uid ${USERID} --gid ${USERGID} -m ${USERNAME} -s /bin/bash \
     && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-
-RUN apt update && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends tzdata
-RUN TZ=Asia/Taipei && \
-    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
-    echo $TZ > /etc/timezone && \
-    dpkg-reconfigure -f noninteractive tzdata 
 
 USER ${USERNAME}
 WORKDIR /home/${USERNAME}
@@ -103,7 +98,6 @@ COPY ./settings/.bashrc /home/${USERNAME}/.bashrc
 COPY ./settings/tf2_sensor_msgs.hpp /opt/ros/$ROS_DISTRO/include/tf2_sensor_msgs/tf2_sensor_msgs.hpp
 COPY ./settings/cyclonedds.xml /home/${USERNAME}/cyclonedds.xml
 COPY ./script/entrypoint.sh /home/${USERNAME}/entrypoint.sh
-RUN sudo chmod +x /home/user/entrypoint.sh
 
 RUN sudo apt autoremove -y && \
     sudo apt clean -y
