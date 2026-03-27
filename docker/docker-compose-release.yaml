@@ -33,6 +33,7 @@ services:
       - XAUTHORITY=/home/user/.Xauthority   # Set Xauthority path
       - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
       # - CYCLONEDDS_URI=file:///home/user/cyclonedds.xml
+    entrypoint: ["/home/user/entrypoint.sh"]
 
   uros-agent:
     build:
