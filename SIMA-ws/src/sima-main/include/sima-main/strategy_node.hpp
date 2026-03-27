@@ -59,7 +59,9 @@ private:
     int last_start_signal_ = 0;
     bool has_assigned_ = false;
 
-    std_msgs::msg::Int32MultiArray pantry_status_data_ = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+    std::vector<int> pantry_status_data_ = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    // std_msgs::msg::Int32MultiArray pantry_status_data_ = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    // std_msgs::msg::Int32MultiArray pantry_status_data_;
 };
 
 } // namespace sima_strategy

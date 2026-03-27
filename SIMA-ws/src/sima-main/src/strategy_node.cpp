@@ -80,8 +80,8 @@ void SimaStrategyNode::startCallback(const std_msgs::msg::Int16::SharedPtr msg) 
 void SimaStrategyNode::pantryStatusCallback(const std_msgs::msg::Int32MultiArray::SharedPtr msg){
     if (last_start_signal_ > 0) {
         for (size_t i = 0; i < msg->data.size(); i++){
-            pantry_status_data_[i] = msg->data[i];
-            RCLCPP_INFO(this->get_logger(), "Received pantry data %d = %d", i, pantry_status_data_[i]);
+            pantry_status_data_[(int)i] = msg->data[i];
+            RCLCPP_INFO(this->get_logger(), "Received pantry data %d = %d", (int)i, pantry_status_data_[i]);
         }
         RCLCPP_INFO(this->get_logger(), "Received pantry data finished.");
     }
