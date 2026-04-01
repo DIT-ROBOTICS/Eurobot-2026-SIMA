@@ -37,7 +37,7 @@
 
 
 <root main_tree_to_execute="MainTree">
-  <BehaviorTree ID="MainTree">
+  <BehaviorTree ID="MainTree"> <StopController name="StopController">
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
       <PipelineSequence name="NavigateWithReplanning">
 
@@ -85,5 +85,5 @@
       </ReactiveFallback>
 
     </RecoveryNode>
-  </BehaviorTree>
+  </StopController></BehaviorTree>
 </root>
