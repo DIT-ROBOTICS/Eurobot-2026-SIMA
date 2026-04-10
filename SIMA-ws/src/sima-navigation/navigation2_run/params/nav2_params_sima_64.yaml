@@ -623,6 +623,11 @@ sima_navigator:
     start_point_2: [1.0, 0.5]
     waypoints_2: [1.5, 0.8, 2.0, 0.7]
 
+vl53_bridge:
+  ros__parameters:
+    trigger_distance: 0.2
+    min_valid_dist: 0.1
+
 final_pose_bridge:
   ros__parameters:
     # twist_topic: "/driving_duaiduaiduai"

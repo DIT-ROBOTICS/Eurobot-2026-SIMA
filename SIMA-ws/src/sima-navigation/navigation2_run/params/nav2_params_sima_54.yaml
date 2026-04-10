@@ -267,7 +267,7 @@ global_costmap:
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 5.0
-        inflation_radius: 0.2
+        inflation_radius: 0.05
       sensor_layer:
         plugin: "Sensor_costmap_plugin::SensorLayer"
         enabled: True
@@ -276,10 +276,10 @@ global_costmap:
         cost_scaling_factor: 2.0
         obstacle_lifespan: 4.0
         sima_id: 4
-        # pantry range
-        # ignore_zone_array: [min_x, min_y, max_x, max_y]
-        # ignore_zone_array: [0.5, 0.4, 2.0, 1.5      # test
-        #                     ]
+      #   # pantry range
+      #   # ignore_zone_array: [min_x, min_y, max_x, max_y]
+      #   # ignore_zone_array: [0.5, 0.4, 2.0, 1.5      # test
+      #   #                     ]
 
       sima_layer:
         plugin: "SIMA_costmap_plugin::SIMALayer"
@@ -622,6 +622,11 @@ sima_navigator:
     # start position 2:
     start_point_2: [1.0, 0.5]
     waypoints_2: [1.5, 0.8, 2.0, 0.7]
+
+vl53_bridge:
+  ros__parameters:
+    trigger_distance: 0.2
+    min_valid_dist: 0.1
 
 final_pose_bridge:
   ros__parameters:
