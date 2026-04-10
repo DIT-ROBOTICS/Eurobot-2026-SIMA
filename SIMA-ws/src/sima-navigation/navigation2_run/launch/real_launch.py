@@ -183,7 +183,8 @@ def generate_launch_description():
         executable='vl53_bridge',
         name='vl53_bridge',
         output='screen',
-        parameters=[{'trigger_distance': 0.4} , {'use_sim_time': use_sim_time}]
+        # parameters=[{'trigger_distance': 0.3} , {'use_sim_time': use_sim_time}]
+        parameters=[params_file]
     )
 
     # sima_navigator_cmd = Node(
@@ -218,7 +219,7 @@ def generate_launch_description():
     # Add the actions to launch all of the navigation nodes
     # ld.add_action(rviz_cmd)
     ld.add_action(bringup_cmd)
-    # ld.add_action(vl53_bridge_cmd)
+    ld.add_action(vl53_bridge_cmd)
     # ld.add_action(sima_navigator_cmd)
 
     # Add the final pose bridge node

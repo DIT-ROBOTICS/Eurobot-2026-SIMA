@@ -43,6 +43,8 @@ void VL53Bridge::loadParameters()
     // TODO: read param file to override default sensor configs
     this->declare_parameter("trigger_distance", 0.5);
     this->get_parameter("trigger_distance", trigger_distance_);
+    this->declare_parameter("min_valid_dist", 0.1);
+    this->get_parameter("min_valid_dist", min_valid_dist_);
 }
 
 void VL53Bridge::rawDataCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg)
@@ -71,7 +73,7 @@ void VL53Bridge::rawDataCallback(const std_msgs::msg::Float32MultiArray::SharedP
 
     // 4. iterate each sensor
     for (size_t i = 0; i < sensors_.size(); ++i) {
-        if (i == 0) continue;   // disable left sensor
+        // if (i == 0) continue;   // disable left sensor
         float dist = msg->data[i];
 
         // check if it is a valid obstacle
