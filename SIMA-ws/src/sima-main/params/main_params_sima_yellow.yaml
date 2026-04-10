@@ -1,6 +1,6 @@
 sima_navigator:
   ros__parameters:
-    sima_id: 1
+    sima_id: 4
     sprint_duration_sec: 2.0
     sprint_speed: 0.4
     start_delay_seconds: 0.0
@@ -23,7 +23,7 @@ sima_navigator:
 
 sima_strategy:
   ros__parameters:
-    sima_id: 1
+    sima_id: 4
     max_pantry_to_target: 4
     pantry_A_time: 50.0 
     pantry_B_time: 50.0
