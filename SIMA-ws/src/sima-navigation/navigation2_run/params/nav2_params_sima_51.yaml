@@ -272,7 +272,7 @@ global_costmap:
         plugin: "Sensor_costmap_plugin::SensorLayer"
         enabled: True
         obstacle_radius: 0.02
-        inflation_radius: 0.16
+        inflation_radius: 0.12
         cost_scaling_factor: 2.0
         obstacle_lifespan: 4.0
         sima_id: 1
@@ -625,7 +625,7 @@ sima_navigator:
 
 vl53_bridge:
   ros__parameters:
-    trigger_distance: 0.2
+    trigger_distance: 0.5
     min_valid_dist: 0.1
 
 final_pose_bridge:
