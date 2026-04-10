@@ -71,7 +71,11 @@ def generate_launch_description():
 
     ld.add_action(localization_cmd)
     ld.add_action(navigation_cmd)
-    ld.add_action(domain_bridge_cmd)
+    
+    if ros_domain_id == '51' or ros_domain_id == '61':  # sima-001 and sima-011
+        print ("Launching domain bridge for sima-001 or sima-011")
+        ld.add_action(domain_bridge_cmd)
+    
     ld.add_action(system_check_cmd)
     ld.add_action(sima_navigator_cmd)
 
