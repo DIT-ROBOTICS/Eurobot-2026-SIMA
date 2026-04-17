@@ -137,9 +137,9 @@ controller_server:
       heading_slowdown_threshold: 0.5 # rad, about  degrees
       heading_kp: 2.2
       min_turning_linear_vel: 0.01
-      max_acc_linear: 0.25 # m/s^2
-      max_acc_angular: 1.5 # rad/s^2
-      max_decel_linear: 1.2 # m/s^2
+      max_acc_linear: 0.22 # m/s^2
+      max_acc_angular: 1.8 # rad/s^2
+      max_decel_linear: 3.0 # m/s^2
       max_decel_linear_emergency: 2.0 # m/s^2
       max_decel_angular: 4.0 # rad/s^2
       curvature_weight: 0.3 # weight for curvature in cost function
@@ -239,8 +239,9 @@ global_costmap:
         [
           "static_layer",
           "obstacle_layer",
+          "sima_pantry_layer",
           "inflation_layer",
-          "sensor_layer",
+          # "sensor_layer",
           "sima_layer",
           "rival_layer",
           "object_layer",
@@ -249,30 +250,60 @@ global_costmap:
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
+      # obstacle_layer:
+      #   plugin: "nav2_costmap_2d::ObstacleLayer"
+      #   enabled: True
+      #   observation_sources: fake_obstacle
+
+      #   fake_obstacle:
+      #     topic: /detected_obstacles
+      #     max_obstacle_height: 2.0
+      #     clearing: True
+      #     marking: True
+      #     data_type: "PointCloud2"
+      #     raytrace_max_range: 3.0
+      #     raytrace_min_range: 0.0
+      #     obstacle_max_range: 2.5
+      #     obstacle_min_range: 0.0
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
-        observation_sources: fake_obstacle
-
-        fake_obstacle:
-          topic: /detected_obstacles
-          max_obstacle_height: 2.0
-          clearing: True
-          marking: True
-          data_type: "PointCloud2"
-          raytrace_max_range: 3.0
-          raytrace_min_range: 0.0
-          obstacle_max_range: 2.5
+        observation_sources: vl53_scan  # 宣告資料來源名稱
+        
+        vl53_scan:
+          topic: /sensors/vl53_scan
+          data_type: "LaserScan"
+          marking: True    # 負責將範圍內的點畫成障礙物
+          clearing: True   # 負責射線追蹤，清除沒有障礙物的區域 (解決殘影！)
+          raytrace_max_range: 0.85  # 射線追蹤清除殘影的最大距離 (稍微大於你的 trigger_distance)
+          obstacle_max_range: 0.70  # 記錄為障礙物的最大距離
           obstacle_min_range: 0.0
+          inf_is_valid: True       # 【極度關鍵】這告訴 Nav2，當讀取到 inf 時，代表前方是空曠的，請把殘影清掉
+      sima_pantry_layer:
+        plugin: "sima_pantry_costmap_plugin::SimaPantryLayer"
+        enabled: True
+        sima_id: 1
+        pantry_names: ["pantry_A", "pantry_B", "pantry_C", "pantry_D", "pantry_E", "pantry_F", "pantry_G", "pantry_H", "pantry_I", "pantry_J"]
+        # 定義格式: [min_x, min_y, max_x, max_y]
+        pantry_A_zone: [0.0, 0.7, 0.2, 0.9]
+        pantry_B_zone: [0.6, 0.0, 0.8, 0.2]
+        pantry_C_zone: [0.7, 0.7, 0.9, 0.9]
+        pantry_D_zone: [1.15, 1.35, 1.35, 1.55]
+        pantry_E_zone: [1.4, 0.0, 1.6, 0.2]
+        pantry_F_zone: [1.4, 0.7, 1.6, 0.9]
+        pantry_G_zone: [1.65, 1.35, 1.85, 1.55]
+        pantry_H_zone: [2.1, 0.7, 2.3, 0.9]
+        pantry_I_zone: [2.2, 0.0, 2.4, 0.2]
+        pantry_J_zone: [2.8, 0.7, 2.99, 0.9]
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 5.0
-        inflation_radius: 0.2
+        cost_scaling_factor: 20.0
+        inflation_radius: 0.12
       sensor_layer:
         plugin: "Sensor_costmap_plugin::SensorLayer"
-        enabled: True
+        enabled: False
         obstacle_radius: 0.02
-        inflation_radius: 0.16
+        inflation_radius: 0.12
         cost_scaling_factor: 2.0
         obstacle_lifespan: 4.0
         sima_id: 3
@@ -442,16 +473,33 @@ planner_server:
     use_omnidirectional_robot: true
     planner_plugins: ["GridBased"]
     GridBased:
-      plugin: "nav2_navfn_planner/NavfnPlanner"
-      tolerance: 0.02
-      use_astar: True
+      # plugin: "nav2_navfn_planner/NavfnPlanner"
+      # tolerance: 0.02
+      # use_astar: True
+      # allow_unknown: false
+
+      plugin: "nav2_smac_planner/SmacPlanner2D"
+      tolerance: 0.05
       allow_unknown: false
+      
+      # 🌟 【防鑽縫神器】：懲罰係數
+      # 數值越大，Planner 越討厭 Inflation 區域，會強制讓路徑保持在通道正中央
+      cost_penalty: 30.0 
+      
+      # 距離與成本的權重比例
+      cost_travel_multiplier: 15.0
+      
+      # 平滑化設定，讓路徑不要像鋸齒狀
+      smoother_max_iterations: 10
+      smoother_on_update: True
+      smoother_do_refinement: True
+
       # plugin: "nav2_smac_planner/SmacPlanner2D"
       # tolerance: 0.02
       # use_astar: true
       # allow_unknown: false
 
-      # cost_travel_multiplier: 2.0 # larger values -> more obstacle avoidance
+      # cost_travel_multiplier: 5.0 # larger values -> more obstacle avoidance
       # downsample_costmap: false # set to true to downsample costmap for planning
       # downsampling_factor: 4 # factor by which to downsample costmap (example 2 -> half size in each dimension)
       # debug_visualizations: false # set to true to enable visualizations in Rviz
@@ -465,7 +513,7 @@ planner_server:
       # smoother_do_refinement: True
       # # model parameters
       # motion_model_for_search: "DIFF" # "DIFF" or "OMNI"
-      # cost_penalty: 5.0 # penalty for too close to obstacles
+      # cost_penalty: 50.0 # penalty for too close to obstacles
       # # no need to change
       # max_iterations: 20000
       # max_on_approach_iterations: 1000
@@ -526,10 +574,10 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [1.1, 1.1, 12.0]
-    min_velocity: [-1.1, -1.1, -12.0]
-    max_accel: [3.3, 3.3, 120.0]
-    max_decel: [-4.4, -4.4, -120.0]
+    max_velocity: [0.44, 0.44, 12.0]
+    min_velocity: [-0.44, -0.44, -12.0]
+    max_accel: [0.25, 0.25, 120.0]
+    max_decel: [-1.6, -1.6, -120.0]
     odom_topic: "/odom/wheel"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
@@ -610,23 +658,19 @@ docking_server:
       stop_degree: 120.0
       rival_radius: 0.44
 
-sima_navigator:
-  ros__parameters:
-    use_sim_time: True
-    start_pose_tolerance: 0.05 # the range to consider "at starting point"
-    start_delay_seconds: 1.0 # seconds to wait at start position before beginning navigation
-    # start position 1:
-    start_point_1: [2.65, 1.02]
-    waypoints_1: [1.5, 0.8, 1.75, 1.35, 0.8, 0.8] # [x1, y1, x2, y2, x3, y3, ...]
-
-    # start position 2:
-    start_point_2: [1.0, 0.5]
-    waypoints_2: [1.5, 0.8, 2.0, 0.7]
-
 vl53_bridge:
   ros__parameters:
-    trigger_distance: 0.2
-    min_valid_dist: 0.1
+    # 信任區間與記憶
+    min_trust_dist: 0.05
+    max_trust_dist: 0.65
+    memory_duration: 0.05
+    
+    # 虛擬光達調校參數
+    raytrace_max_range: 2.5       # 必須大於 Costmap ObstacleLayer 裡的 raytrace_max_range
+    half_fov_mark_deg: 3.0        # 畫牆寬度 (度)，越小牆越精緻
+    half_fov_clear_deg: 13.5      # 清除寬度 (度)，建議符合感測器真實物理視角的一半
+    gap_fill_tolerance: 0.1       # 智能補點判定距離差 (公尺)，如果場地牆壁斜率較大可以稍微調高
+    smear_rays: 3                 # 牆壁加厚塗抹強度 (條數)
 
 final_pose_bridge:
   ros__parameters:
