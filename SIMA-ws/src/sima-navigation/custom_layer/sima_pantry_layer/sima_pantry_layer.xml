@@ -1,0 +1,5 @@
+<library path="sima_pantry_layer">
+  <class type="sima_pantry_costmap_plugin::SimaPantryLayer" base_class_type="nav2_costmap_2d::Layer">
+    <description>Marks pantries as obstacles until targeted by SIMA goal topic.</description>
+  </class>
+</library>

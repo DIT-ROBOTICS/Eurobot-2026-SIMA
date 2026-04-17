@@ -1,22 +1,14 @@
 #include "navigation2_run/vl53_bridge.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include <cmath>
+#include <limits>
+#include <algorithm>
 
-// transform degree to radian
-constexpr double deg2rad(double deg) {
-    return deg * M_PI / 180.0;
-}
+constexpr double deg2rad(double deg) { return deg * M_PI / 180.0; }
 
 VL53Bridge::VL53Bridge() : Node("vl53_bridge_node")
 {
-    // 1. Initialize TF buffer
-    tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
-    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-
-    // 2. load parameters
     loadParameters();
 
-    // 3. Establish communication
-    // QoS set to Best Effort because losing one or two frames of sensor data is acceptable; timeliness is more important
     rclcpp::QoS qos_sensor(10);
     qos_sensor.best_effort();
     
@@ -24,169 +16,183 @@ VL53Bridge::VL53Bridge() : Node("vl53_bridge_node")
         "/sensors/raw_ranges", qos_sensor, 
         std::bind(&VL53Bridge::rawDataCallback, this, std::placeholders::_1));
 
-    pub_obstacles_ = this->create_publisher<geometry_msgs::msg::PoseArray>(
-        "/sensors/detected_obstacles", 10);
+    pub_scan_ = this->create_publisher<sensor_msgs::msg::LaserScan>("/sensors/vl53_scan", 10);
 
-    RCLCPP_INFO(this->get_logger(), "VL53 Bridge Node Started. Listening for raw ranges...");
+    // initialize memory
+    for (size_t i = 0; i < sensors_.size(); ++i) {
+        memory_[i] = {0.0f, this->now(), false};
+    }
+
+    RCLCPP_INFO(this->get_logger(), "VL53 Bridge (Virtual LiDAR + Memory) Started.");
 }
 
 void VL53Bridge::loadParameters()
 {
-    // default sensor configurations
-    // [0:Left, 1:Center, 2:Right]
     sensors_ = {
         {"Left",   0.04867,  0.03152, deg2rad(33.57)},
-        {"Center", 0.053,  0.0,   deg2rad(0.0)},
+        {"Center", 0.053,  0.0,       deg2rad(0.0)},
         {"Right",  0.04867, -0.03152, deg2rad(-33.57)}
     };
 
-    // TODO: read param file to override default sensor configs
-    this->declare_parameter("trigger_distance", 0.5);
-    this->get_parameter("trigger_distance", trigger_distance_);
-    this->declare_parameter("min_valid_dist", 0.1);
-    this->get_parameter("min_valid_dist", min_valid_dist_);
+    // The trusted distance range
+    this->declare_parameter("min_trust_dist", 0.05);
+    this->get_parameter("min_trust_dist", min_trust_dist_);
+    this->declare_parameter("max_trust_dist", 0.65);
+    this->get_parameter("max_trust_dist", max_trust_dist_);
+    
+    // memory duration
+    this->declare_parameter("memory_duration", 0.05);
+    this->get_parameter("memory_duration", memory_duration_);
+
+    // Other params
+    this->declare_parameter("raytrace_max_range", 2.5);
+    this->get_parameter("raytrace_max_range", raytrace_max_range_);
+
+    this->declare_parameter("half_fov_mark_deg", 3.0);
+    this->get_parameter("half_fov_mark_deg", half_fov_mark_deg_);
+
+    this->declare_parameter("half_fov_clear_deg", 13.5);
+    this->get_parameter("half_fov_clear_deg", half_fov_clear_deg_);
+
+    this->declare_parameter("gap_fill_tolerance", 0.1);
+    this->get_parameter("gap_fill_tolerance", gap_fill_tolerance_);
+
+    this->declare_parameter("smear_rays", 3);
+    this->get_parameter("smear_rays", smear_rays_);
 }
 
 void VL53Bridge::rawDataCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg)
 {
-    // 1. check data size
-    if (msg->data.size() != sensors_.size()) {
-        RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000, 
-            "Received data size (%ld) does not match sensor count (%ld)!", 
-            msg->data.size(), sensors_.size());
-        return;
-    }
+    if (msg->data.size() != sensors_.size()) return;
 
-    // 2. ready output message
-    geometry_msgs::msg::PoseArray output_msg;
-    output_msg.header.stamp = this->now();
-    output_msg.header.frame_id = "map"; // transform to map frame
+    rclcpp::Time current_time = this->now();
+    sensor_msgs::msg::LaserScan scan_msg;
+    scan_msg.header.stamp = current_time;
+    scan_msg.header.frame_id = "base_link"; 
 
-    // 3. check if TF is available
-    // We need to transform points from base_link to map
-    // Here we don't query Transform, but directly use tf_buffer->transform() function
-    if (!tf_buffer_->canTransform("map", "base_link", tf2::TimePointZero)) {
-        RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 5000, 
-            "Waiting for TF (map -> base_link)... Cannot publish obstacles.");
-        return;
-    }
+    // Define Lidar range: slightly wider than sensors width limit (-45 degree ~ +45 degree)
+    scan_msg.angle_min = deg2rad(-45.0);
+    scan_msg.angle_max = deg2rad(45.0);
+    scan_msg.angle_increment = deg2rad(0.5);
+    scan_msg.time_increment = 0.0;
+    scan_msg.scan_time = 0.1;
+    scan_msg.range_min = min_trust_dist_;
+    scan_msg.range_max = raytrace_max_range_; // use to shoot long distance eliminate laser
 
-    // 4. iterate each sensor
+    int num_rays = std::round((scan_msg.angle_max - scan_msg.angle_min) / scan_msg.angle_increment) + 1;
+    
+    // Fill the lists with NAN -> So that the old space in blind spot won't be updated
+    // Nav2 遇到 NaN 會完全忽略（不畫牆、也不拆牆），這保護了盲區內的舊牆壁不被誤刪。
+    scan_msg.ranges.assign(num_rays, std::numeric_limits<float>::quiet_NaN());
+
+    double half_fov_mark = deg2rad(half_fov_mark_deg_);       // draw wall marker
+    double half_fov_clear = deg2rad(half_fov_clear_deg_);     // erase wall marker
+
     for (size_t i = 0; i < sensors_.size(); ++i) {
-        // if (i == 0) continue;   // disable left sensor
-        float dist = msg->data[i];
+        float raw_dist = msg->data[i];
+        float output_dist = std::numeric_limits<float>::infinity(); // initial output(inf)
 
-        // check if it is a valid obstacle
-        if (dist > min_valid_dist_ && dist < trigger_distance_) {
+        if (raw_dist > 0.01f && raw_dist <= max_trust_dist_) {
+            float clamped_dist = std::max(raw_dist, (float)min_trust_dist_);
             
-            const auto& sensor = sensors_[i];
+            // if dist smaller than min trust dist: still have to draw at min trust dist; otherwise it will not see the obstacle
+            memory_[i].last_valid_dist = clamped_dist;
+            memory_[i].last_seen_time = current_time;
+            memory_[i].is_valid = true;
+            output_dist = clamped_dist;
 
-            // A. calculate obstacle position in robot frame (base_link)
-            // Obs_X = installation X + distance * cos(installation angle)
-            // Obs_Y = installation Y + distance * sin(installation angle)
-            double local_x = sensor.x_offset + dist * std::cos(sensor.yaw_angle);
-            double local_y = sensor.y_offset + dist * std::sin(sensor.yaw_angle);
+        } else {
+            double age = (current_time - memory_[i].last_seen_time).seconds();
+            if (memory_[i].is_valid && age < memory_duration_) {
+                output_dist = memory_[i].last_valid_dist;
+            } else {
+                memory_[i].is_valid = false;
+                output_dist = std::numeric_limits<float>::infinity();
+            }
+        }
 
-            // B. create PointStamped (to let TF know this point is in base_link)
-            geometry_msgs::msg::PointStamped point_in_base, point_in_map;
-            point_in_base.header.frame_id = "base_link";
-            point_in_base.header.stamp = rclcpp::Time(0); // latest time
-            point_in_base.point.x = local_x;
-            point_in_base.point.y = local_y;
-            point_in_base.point.z = 0.0;
+        // Optimization: Dynamically determine the angle range that this sensor should affect
+        // If it's inf (to clear), use a large brush; if it's numerical (to draw a wall), use a fine brush.
+        double active_half_fov = std::isinf(output_dist) ? half_fov_clear : half_fov_mark;
 
-            try {
-                // C. perform coordinate transformation (base_link -> map)
-                // This line automatically handles the robot's position and orientation
-                point_in_map = tf_buffer_->transform(point_in_base, "map");
+        // 2. Fill the calculated distance into the corresponding narrow sector.
+        const auto& sensor = sensors_[i];
+        double start_angle = sensor.yaw_angle - active_half_fov;
+        double end_angle = sensor.yaw_angle + active_half_fov;
 
-                // D. add to output list
-                geometry_msgs::msg::Pose pose_map;
-                pose_map.position = point_in_map.point;
-                pose_map.orientation.w = 1.0; // obstacle is a point, orientation is not important
-                
-                output_msg.poses.push_back(pose_map);
+        int start_idx = std::round((start_angle - scan_msg.angle_min) / scan_msg.angle_increment);
+        int end_idx = std::round((end_angle - scan_msg.angle_min) / scan_msg.angle_increment);
 
-                // Debug
-                // RCLCPP_INFO(this->get_logger(), "[%s] Hit at %.2fm -> Map(%.2f, %.2f)", 
-                //     sensor.name.c_str(), dist, point_in_map.point.x, point_in_map.point.y);
+        start_idx = std::max(0, start_idx);
+        end_idx = std::min(num_rays - 1, end_idx);
 
-            } catch (const tf2::TransformException & ex) {
-                RCLCPP_WARN(this->get_logger(), "TF Transform failed: %s", ex.what());
-                continue;
+        for (int j = start_idx; j <= end_idx; ++j) {
+            if (std::isinf(output_dist)) {
+                 scan_msg.ranges[j] = std::numeric_limits<float>::infinity();
+            } else {
+                 scan_msg.ranges[j] = output_dist + sensor.x_offset;
             }
         }
     }
 
-    // 5. publish
-    // Even if there are no obstacles, consider whether to publish an empty message (depending on your SensorLayer logic)
-    // Here we choose: always publish, so the monitoring side knows the node is alive
-    pub_obstacles_->publish(output_msg);
+    auto check_and_fill_gap = [&](int idx_a, int idx_b) {
+        if (memory_[idx_a].is_valid && memory_[idx_b].is_valid) {
+            float dist_a = memory_[idx_a].last_valid_dist;
+            float dist_b = memory_[idx_b].last_valid_dist;
+            
+            if (std::abs(dist_a - dist_b) < gap_fill_tolerance_) {
+                const auto& s_a = sensors_[idx_a];
+                const auto& s_b = sensors_[idx_b];
 
+                int ray_a = std::round((s_a.yaw_angle - scan_msg.angle_min) / scan_msg.angle_increment);
+                int ray_b = std::round((s_b.yaw_angle - scan_msg.angle_min) / scan_msg.angle_increment);
 
+                int start_fill = std::min(ray_a, ray_b);
+                int end_fill = std::max(ray_a, ray_b);
+                
+                start_fill = std::max(0, start_fill);
+                end_fill = std::min(num_rays - 1, end_fill);
 
+                for (int k = start_fill; k <= end_fill; ++k) {
+                    float ratio = (float)(k - start_fill) / (end_fill - start_fill);
+                    float dist_start = (start_fill == ray_a) ? dist_a : dist_b;
+                    float dist_end = (end_fill == ray_a) ? dist_a : dist_b;
+                    
+                    float interp_dist = dist_start + ratio * (dist_end - dist_start);
+                    float avg_offset = (s_a.x_offset + s_b.x_offset) / 2.0f;
+                    
+                    // 【Thickening Magic】: We not only draw interp_dist, but if possible,
+                    // In LaserScan, we take the "nearest distance".
+                    // To thicken the wall, we can also fill in the "adjacent angles" around this angle with the same distance.
+                    // This way, although the depth doesn't increase, the lateral density will be extremely high, doubling the tear resistance.
+                    float final_dist = interp_dist + avg_offset;
 
+                    // Optimization 3: Heavy Smearing
+                    // Instead of drawing a single point, extend 3 rays to the left and right (covering a total of 7 rays, approximately 3.5 degrees)
+                    // This way, even if coordinate transformation causes floating-point errors, this wall will absolutely not be erased!
+                   
+                    for (int m = -smear_rays_; m <= smear_rays_; ++m) {
+                        int target_idx = k + m;
+                        if (target_idx >= 0 && target_idx < num_rays) {
+                            if (std::isinf(scan_msg.ranges[target_idx]) || 
+                                std::isnan(scan_msg.ranges[target_idx]) || 
+                                final_dist < scan_msg.ranges[target_idx]) 
+                            {
+                                scan_msg.ranges[target_idx] = final_dist;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    };
 
+    // Check if there is a wall between the left (0) and the middle (1)
+    check_and_fill_gap(0, 1);
+    / // Check if there is a wall between the middle (1) and the right (2)
+    check_and_fill_gap(1, 2);
 
-    // // 1. 鎖定感測器數據的時間戳 (這是關鍵！)
-    // // 因為 Float32MultiArray 沒有 header，我們假設收到當下就是觀測時間
-    // rclcpp::Time sensor_time = this->now();
-
-    // geometry_msgs::msg::PoseArray output_msg;
-    // output_msg.header.stamp = sensor_time; // 輸出訊息跟隨感測器時間
-    // output_msg.header.frame_id = "map";
-
-    // // 2. 等待 TF (LookupTransform with Timeout)
-    // // 我們不能用 transform() 直接轉，因為它預設不支援 timeout
-    // // 我們需要等待定位系統 (EKF/Camera) 發布這個時間點的 TF，這通常需要幾毫秒到幾百毫秒
-    // geometry_msgs::msg::TransformStamped transform_stamped;
-    // try {
-    //     // 設定等待時間 (例如 0.2秒)，這取決於你的定位延遲有多大
-    //     // 如果定位系統延遲超過這個時間，這幀數據就會被捨棄，避免畫錯
-    //     transform_stamped = tf_buffer_->lookupTransform(
-    //         "map", "base_link",
-    //         sensor_time,
-    //         rclcpp::Duration::from_seconds(0.2)); 
-    // } catch (const tf2::TransformException & ex) {
-    //     // 如果等不到 TF (定位太慢或斷了)，就跳過這一次
-    //     RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1000, 
-    //         "Wait for TF failed (latency too high?): %s", ex.what());
-    //     return;
-    // }
-
-    // // 3. 遍歷每個感測器並轉換
-    // for (size_t i = 0; i < sensors_.size(); ++i) {
-    //     if (i == 0) continue; // disable left sensor
-    //     float dist = msg->data[i];
-
-    //     if (dist > min_valid_dist_ && dist < trigger_distance_) {
-    //         const auto& sensor = sensors_[i];
-
-    //         // A. 計算 base_link 上的局部座標
-    //         double local_x = sensor.x_offset + dist * std::cos(sensor.yaw_angle);
-    //         double local_y = sensor.y_offset + dist * std::sin(sensor.yaw_angle);
-
-    //         // B. 準備轉換的點
-    //         // 注意：這裡不需要再填 stamp，因為我們會用上面拿到的 transform_stamped 直接算
-    //         geometry_msgs::msg::PointStamped point_in_base;
-    //         point_in_base.point.x = local_x;
-    //         point_in_base.point.y = local_y;
-    //         point_in_base.point.z = 0.0;
-
-    //         // C. 執行座標轉換 (使用 tf2::doTransform)
-    //         geometry_msgs::msg::PointStamped point_in_map;
-    //         tf2::doTransform(point_in_base, point_in_map, transform_stamped);
-
-    //         // D. 加入輸出列表
-    //         geometry_msgs::msg::Pose pose_map;
-    //         pose_map.position = point_in_map.point;
-    //         pose_map.orientation.w = 1.0;
-    //         output_msg.poses.push_back(pose_map);
-    //     }
-    // }
-
-    // // 4. 發布
-    // pub_obstacles_->publish(output_msg);
+    pub_scan_->publish(scan_msg);
 }
 
 int main(int argc, char ** argv)

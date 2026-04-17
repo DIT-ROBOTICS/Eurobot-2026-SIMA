@@ -1,113 +1,135 @@
 # Name of the domain bridge, used for node naming and logging
 name: my_bridge
-from_domain: 14
-to_domain: 61
-topics:
-  # Bridge sima_11/pose/global to multiple domains
-  sima_11/pose/global:
+from_domain: 13
+to_domain: 50
+topics:  
+  # Bridge sima_1/pose/global to multiple domains
+  sima_1/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    to_domain: 61
+    to_domain: 51
 
-  sima_11/pose/global:
+  sima_1/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    to_domain: 62
+    to_domain: 52
 
-  sima_11/pose/global:
+  sima_1/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    to_domain: 63
+    to_domain: 53
+
+  sima_1/pose/global:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    to_domain: 54  
   
-  sima_11/pose/global:
+  # Bridge sima_2/pose/global to multiple domains
+  sima_2/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    to_domain: 64  
+    to_domain: 51
+
+  sima_2/pose/global:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    to_domain: 52
+
+  sima_2/pose/global:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    to_domain: 53
+
+  sima_2/pose/global:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    to_domain: 54  
   
-  # Bridge sima_12/pose/global to multiple domains
-  sima_12/pose/global:
+  # Bridge sima_3/pose/global to multiple domains
+  sima_3/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    to_domain: 61
+    to_domain: 51
 
-  sima_12/pose/global:
+  sima_3/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    to_domain: 62
+    to_domain: 52
 
-  sima_12/pose/global:
+  sima_3/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    to_domain: 63
+    to_domain: 53
 
-  sima_12/pose/global:
+  sima_3/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    to_domain: 64  
+    to_domain: 54  
   
-  # Bridge sima_13/pose/global to multiple domains
-  sima_13/pose/global:
+  # Bridge sima_4/pose/global to multiple domains
+  sima_4/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    to_domain: 61
+    to_domain: 51
 
-  sima_13/pose/global:
+  sima_4/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    to_domain: 62
+    to_domain: 52
 
-  sima_13/pose/global:
+  sima_4/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    to_domain: 63
+    to_domain: 53
 
-  sima_13/pose/global:
+  sima_4/pose/global:
     type: geometry_msgs/msg/PoseWithCovarianceStamped
-    to_domain: 64  
-  
-  # Bridge sima_14/pose/global to multiple domains
-  sima_14/pose/global:
-    type: geometry_msgs/msg/PoseWithCovarianceStamped
-    to_domain: 61
-
-  sima_14/pose/global:
-    type: geometry_msgs/msg/PoseWithCovarianceStamped
-    to_domain: 62
-
-  sima_14/pose/global:
-    type: geometry_msgs/msg/PoseWithCovarianceStamped
-    to_domain: 63
-
-  sima_14/pose/global:
-    type: geometry_msgs/msg/PoseWithCovarianceStamped
-    to_domain: 64  
+    to_domain: 54  
   
   # Bridge start signal topic to multiple domains
   robot/startup/sima/start:
     type: std_msgs/msg/Int16
-    to_domain: 61
+    to_domain: 51
   
   robot/startup/sima/start:
     type: std_msgs/msg/Int16
-    to_domain: 62
+    to_domain: 52
   
   robot/startup/sima/start:
     type: std_msgs/msg/Int16
-    to_domain: 63
+    to_domain: 53
   
   robot/startup/sima/start:
     type: std_msgs/msg/Int16
-    to_domain: 64
+    to_domain: 54
+  
+  # Bridge stop signal topic to multiple domains
+  robot/startup/sima_game_over:
+    type: std_msgs/msg/Bool
+    to_domain: 51
+    remap: stopRobot 
+  
+  robot/startup/sima_game_over:
+    type: std_msgs/msg/Bool
+    to_domain: 52
+    remap: stopRobot 
+  
+  robot/startup/sima_game_over:
+    type: std_msgs/msg/Bool
+    to_domain: 53
+    remap: stopRobot 
+  
+  robot/startup/sima_game_over:
+    type: std_msgs/msg/Bool
+    to_domain: 54
+    remap: stopRobot 
 
   # Bridge pantry status topic to sima 1 domain
   /pantry_status:
     type: std_msgs/msg/Int32MultiArray
-    to_domain: 61
+    to_domain: 51
   
   # Bridge goal assignment topic to multiple domains
-  /sima_12/goal:
+  /sima_2/goal:
     type: std_msgs/msg/String
-    from_domain: 61
-    to_domain: 62
+    from_domain: 51
+    to_domain: 52
   
-  /sima_13/goal:
+  /sima_3/goal:
     type: std_msgs/msg/String
-    from_domain: 61
-    to_domain: 63
+    from_domain: 51
+    to_domain: 53
   
-  /sima_14/goal:
+  /sima_4/goal:
     type: std_msgs/msg/String
-    from_domain: 61
-    to_domain: 64
+    from_domain: 51
+    to_domain: 54
+
   # # Bridge "/clock" topic from doman ID 2 to domain ID 3
   # clock:
   #   type: rosgraph_msgs/msg/Clock
