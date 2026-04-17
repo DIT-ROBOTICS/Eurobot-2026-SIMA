@@ -609,7 +609,12 @@ namespace diff_controller
         }
 
         // --- 8. 加減速平滑限制 (Slew Rate Limiter) ---
-        if (last_time_.nanoseconds() != 0) {
+        if (last_time_.nanoseconds() == 0) {
+            target_linear_vel = 0.0;
+            target_angular_vel = 0.0;
+            RCLCPP_INFO(logger_, "[%s] Controller initialized, first command zeroed for safety.", plugin_name_.c_str());
+        }
+        else {
             double dt = (current_time - last_time_).seconds();
             if (dt > 0.0 && dt < 0.5) {
                 

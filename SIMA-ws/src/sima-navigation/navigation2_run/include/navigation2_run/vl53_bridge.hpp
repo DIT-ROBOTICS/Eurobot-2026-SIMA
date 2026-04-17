@@ -3,15 +3,10 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/float32_multi_array.hpp"
-#include "geometry_msgs/msg/pose_array.hpp"
-#include "geometry_msgs/msg/point_stamped.hpp"
-#include "tf2_ros/transform_listener.h"
-#include "tf2_ros/buffer.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp" 
-
+#include "sensor_msgs/msg/laser_scan.hpp"
 #include <vector>
 #include <string>
-#include <cmath>
+#include <map>
 
 class VL53Bridge : public rclcpp::Node
 {
@@ -19,28 +14,39 @@ public:
     VL53Bridge();
 
 private:
-    // Sensor configuration structure
     struct SensorConfig {
         std::string name;
-        double x_offset;   // relative to base_link
-        double y_offset;   // relative to base_link
-        double yaw_angle;  // installation angle (radians)
+        double x_offset;   
+        double y_offset;   
+        double yaw_angle;  
+    };
+
+    // sensor memory structure
+    struct SensorMemory {
+        float last_valid_dist;
+        rclcpp::Time last_seen_time;
+        bool is_valid;
     };
 
     void rawDataCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg);
-    
-    // Parameter declaration and loading
     void loadParameters();
 
     rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr sub_raw_;
-    rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr pub_obstacles_;
-
-    std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-    std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
+    rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr pub_scan_;
 
     std::vector<SensorConfig> sensors_;
-    double trigger_distance_ = 0.4; // less than this distance is considered an obstacle
-    double min_valid_dist_ = 0.1;  // minimum valid distance (to filter noise in order to avoid affecting by itself)
+    std::map<int, SensorMemory> memory_; // store each sensor's data(memory)
+
+    // parameters
+    double min_trust_dist_ = 0.05;  // sensors data can trust range lower bound
+    double max_trust_dist_ = 0.50;  // sensors data can trust range upper bound (ignore data more than this range)
+    double memory_duration_ = 0.5;  // memory duration time(s)
+
+    double raytrace_max_range_ = 2.5;
+    double half_fov_mark_deg_ = 3.0;
+    double half_fov_clear_deg_ = 13.5;
+    double gap_fill_tolerance_ = 0.1;
+    int smear_rays_ = 3;
 };
 
 #endif // VL53_BRIDGE_HPP_
