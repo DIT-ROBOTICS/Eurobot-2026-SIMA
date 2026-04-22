@@ -1,0 +1,7 @@
+<library path="special_diff_controller">
+  <class name="special_diff_controller::SpecialDiffController" type="special_diff_controller::SpecialDiffController" base_class_type="nav2_core::Controller">
+    <description>
+      A specialized diff drive controller that enforces strict turn-then-move logic.
+    </description>
+  </class>
+</library>

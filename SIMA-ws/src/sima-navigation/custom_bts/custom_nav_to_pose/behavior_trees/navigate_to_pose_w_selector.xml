@@ -5,7 +5,7 @@
         <RetryUntilSuccessful num_attempts="3">
           <PipelineSequence name="NavigateWithReplanning">
             <RateController hz="5">
-              <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+              <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased_Pease"/>
             </RateController>
             <Sequence>
                 <ControllerSelector topic_name="/controller_type" default_controller="Diff" selected_controller="{controller}"/>
