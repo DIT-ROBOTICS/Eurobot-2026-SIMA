@@ -64,14 +64,37 @@ void SimaPantryLayer::onInitialize()
 void SimaPantryLayer::goalCallback(const std_msgs::msg::String::SharedPtr msg)
 {
   std::lock_guard<std::mutex> lock(mutex_);
-  std::string target_pantry = msg->data;
+  
+  std::string raw_data = msg->data;
+  std::string target_pantry;
 
-  // Check whether the received is correct (Is in the vector)
+  // 【優化】：使用與 Navigator 一致的 stringstream 切割法
+  std::stringstream ss(raw_data);
+  std::string item;
+  
+  // getline 會切出第一段 (直到遇到第一個 '|')
+  if (std::getline(ss, item, '|')) {
+    target_pantry = item; // 這一定會是 "pantry_X"
+  } else {
+    target_pantry = raw_data; // 防呆機制
+  }
+
+  // 註：如果未來 Costmap 需要知道任務類型，可以繼續呼叫 getline:
+  // std::string mission_type_str;
+  // std::getline(ss, mission_type_str, '|');
+
+  // 【核心防護】：在開啟新盤子之前，先將所有盤子「關閉」（恢復 LETHAL_OBSTACLE）
+  for (auto& [name, pantry] : pantries_) {
+    pantry.is_open = false;
+  }
+
+  // Check whether the received is correct (Is in the vector/map)
   if (pantries_.find(target_pantry) != pantries_.end()) {
     pantries_[target_pantry].is_open = true;
     RCLCPP_INFO(node_.lock()->get_logger(), "Pantry [%s] is now OPEN (Cost removed)", target_pantry.c_str());
   } else {
-    RCLCPP_WARN(node_.lock()->get_logger(), "Received unknown pantry target: %s", target_pantry.c_str());
+    // 稍微優化了 Warn 訊息，把收到的原始字串也印出來方便 Debug
+    RCLCPP_WARN(node_.lock()->get_logger(), "Received unknown pantry target: %s (Raw: %s)", target_pantry.c_str(), raw_data.c_str());
   }
 }
 
