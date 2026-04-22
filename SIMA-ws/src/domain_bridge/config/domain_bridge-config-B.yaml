@@ -88,6 +88,10 @@ topics:
     type: std_msgs/msg/Int16
     to_domain: 54
   
+  robot/startup/game_time:
+    type: std_msgs/msg/Float32
+    to_domain: 51
+  
   # Bridge stop signal topic to multiple domains
   robot/startup/sima_game_over:
     type: std_msgs/msg/Bool

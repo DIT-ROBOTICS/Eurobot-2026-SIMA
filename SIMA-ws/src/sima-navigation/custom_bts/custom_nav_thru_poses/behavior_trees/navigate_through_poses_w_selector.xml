@@ -45,8 +45,10 @@
           <RecoveryNode number_of_retries="1" name="ComputePathThroughPoses">
             <ReactiveSequence>
               <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" radius="0.5" robot_base_frame="base_link"/>
+
+              <PlannerSelector topic_name="/planner_type_thru" default_planner="GridBased_Pease" selected_planner="{selected_planner}"/>
               
-              <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="GridBased"/>
+              <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="{selected_planner}"/>
             </ReactiveSequence>
             <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
           </RecoveryNode>
