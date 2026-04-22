@@ -189,7 +189,7 @@ void VL53Bridge::rawDataCallback(const std_msgs::msg::Float32MultiArray::SharedP
 
     // Check if there is a wall between the left (0) and the middle (1)
     check_and_fill_gap(0, 1);
-    / // Check if there is a wall between the middle (1) and the right (2)
+    // Check if there is a wall between the middle (1) and the right (2)
     check_and_fill_gap(1, 2);
 
     pub_scan_->publish(scan_msg);

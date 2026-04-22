@@ -30,6 +30,14 @@ def generate_launch_description():
         description='Path to the parameters file for main'
     )
 
+    declare_mission_type_cmd = DeclareLaunchArgument(
+        'mission_type',
+        default_value = '2',
+        description='Mission Type: 1 (Peace), 2 (Normal), 3 (Aggressive)'
+    )
+
+    mission_type = LaunchConfiguration('mission_type')
+
     localization_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(get_package_share_directory('sima-localization-real'), 'launch', 'robot_localization.launch.py')),
     )
@@ -62,12 +70,16 @@ def generate_launch_description():
         executable='sima_strategy',
         name='sima_strategy',
         output='screen',
-        parameters=[mission_params_file]
+        parameters=[
+            mission_params_file,
+            {'mission_type': mission_type}    
+        ]
     )
 
     ld = LaunchDescription()
 
     ld.add_action(declare_params_file_cmd)
+    ld.add_action(declare_mission_type_cmd)
 
     ld.add_action(localization_cmd)
     ld.add_action(navigation_cmd)

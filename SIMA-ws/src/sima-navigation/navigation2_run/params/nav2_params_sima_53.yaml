@@ -89,7 +89,7 @@ controller_server:
     failure_tolerance: 0.0
     progress_checker_plugin: "progress_checker"
     goal_checker_plugins: ["Precise", "Unerring", "Loose"]
-    controller_plugins: ["Diff"]
+    controller_plugins: ["Diff", "Diff_Aggressive", "special_Diff"]
 
     # Progress checker parameters
     progress_checker:
@@ -128,7 +128,7 @@ controller_server:
       plugin: "diff_controller::DiffController"
       desired_linear_vel: 0.44
       lookahead_dist: 0.15
-      max_angular_vel: 1.5
+      max_angular_vel: 2.4
       min_linear_vel: 0.0
       min_approach_linear_vel: 0.01
       approach_dist: 0.35
@@ -138,12 +138,61 @@ controller_server:
       heading_kp: 2.2
       min_turning_linear_vel: 0.01
       max_acc_linear: 0.22 # m/s^2
-      max_acc_angular: 1.8 # rad/s^2
-      max_decel_linear: 3.0 # m/s^2
+      max_acc_angular: 3.0 # rad/s^2
+      max_decel_linear: 1.8 # m/s^2
       max_decel_linear_emergency: 2.0 # m/s^2
       max_decel_angular: 4.0 # rad/s^2
       curvature_weight: 0.3 # weight for curvature in cost function
       # allow_unknown: True
+    
+    Diff_Aggressive:
+      plugin: "diff_controller::DiffController"
+      desired_linear_vel: 0.6
+      lookahead_dist: 0.30
+      max_angular_vel: 2.4
+      min_linear_vel: 0.0
+      min_approach_linear_vel: 0.01
+      approach_dist: 0.35
+      transform_tolerance: 0.1
+      heading_rotate_threshold: 0.8 # rad, about 46 degrees
+      heading_slowdown_threshold: 0.5 # rad, about  degrees
+      heading_kp: 2.2
+      min_turning_linear_vel: 0.01
+      max_acc_linear: 0.3 # m/s^2
+      max_acc_angular: 5.0 # rad/s^2
+      max_decel_linear: 1.8 # m/s^2
+      max_decel_linear_emergency: 2.0 # m/s^2
+      max_decel_angular: 6.0 # rad/s^2
+      curvature_weight: 0.3 # weight for curvature in cost function
+    
+    special_Diff:
+      plugin: "special_diff_controller::SpecialDiffController"
+      
+      # === 基本速度與距離 ===
+      desired_linear_vel: 0.4
+      lookahead_dist: 0.15        # [注意] 建議調大 (原本是 0.15)。看遠一點可以濾掉路徑上細碎的折線，讓狀態機不會瘋狂切換。
+      max_angular_vel: 2.4
+      min_approach_linear_vel: 0.05 # 靠近終點時的最小蠕行速度
+      approach_dist: 0.50
+      min_approach_linear_vel: 0.05
+      transform_tolerance: 0.1
+
+      # === 狀態機切換門檻 (Hysteresis) 核心區 ===
+      # 這是決定你的機器人會不會「抽搐」的關鍵
+      heading_error_threshold_to_rotate: 0.20  # rad (約 8.5 度)。當前進時，偏離超過這個角度，強制煞車進入旋轉狀態。
+      heading_error_threshold_to_drive: 0.05   # rad (約 2.8 度)。當旋轉時，必須對準到誤差小於這個角度，才允許踩油門前進。
+
+      # === 控制增益 (Kp) ===
+      heading_kp: 1.5                # 原地旋轉時對準目標的 P Gain (沿用你原本的數值)
+      straight_correction_kp: 1.2    # [新參數] 走直線時的 P Gain。用來微調馬達左右不平衝導致的走歪，不能設太大，否則會變蛇行。
+
+      # === 加減速限制 (Slew Rate) ===
+      # 沿用你原本的設定，這對保護實體車的機構很有幫助
+      max_acc_linear: 0.2         # m/s^2
+      max_acc_angular: 5.0         # rad/s^2
+      max_decel_linear: 2.8        # m/s^2
+      max_decel_linear_emergency: 4.0 # m/s^2 (遇到障礙物時的煞車力度)
+      max_decel_angular: 6.0       # rad/s^2
 
       # plugin: "teb_controller::TebController"
 
@@ -282,7 +331,7 @@ global_costmap:
       sima_pantry_layer:
         plugin: "sima_pantry_costmap_plugin::SimaPantryLayer"
         enabled: True
-        sima_id: 1
+        sima_id: 3
         pantry_names: ["pantry_A", "pantry_B", "pantry_C", "pantry_D", "pantry_E", "pantry_F", "pantry_G", "pantry_H", "pantry_I", "pantry_J"]
         # 定義格式: [min_x, min_y, max_x, max_y]
         pantry_A_zone: [0.0, 0.7, 0.2, 0.9]
@@ -364,7 +413,7 @@ global_costmap:
         base_frame: "base_link" # added
       keepout_layer:
         plugin: "keepout_costmap_plugin::KeepoutLayer"
-        enabled: True
+        enabled: False
         # keepout_zone_array: [X, Y, lengthX, lengthY]
         # keepout_zone_array: [0.375, 1.775, 0.45, 0.45,  # A
         #                      0.225, 0.875, 0.45, 0.45,  # B
@@ -471,8 +520,14 @@ planner_server:
     expected_planner_frequency: 20.0
     use_sim_time: False
     use_omnidirectional_robot: true
-    planner_plugins: ["GridBased"]
-    GridBased:
+    planner_plugins: ["GridBased_Aggressive", "GridBased_Pease"]
+    GridBased_Aggressive:
+      plugin: "nav2_navfn_planner/NavfnPlanner"
+      tolerance: 0.02
+      use_astar: True
+      allow_unknown: false
+    
+    GridBased_Pease:
       # plugin: "nav2_navfn_planner/NavfnPlanner"
       # tolerance: 0.02
       # use_astar: True
@@ -574,10 +629,10 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [0.44, 0.44, 12.0]
-    min_velocity: [-0.44, -0.44, -12.0]
-    max_accel: [0.25, 0.25, 120.0]
-    max_decel: [-1.6, -1.6, -120.0]
+    max_velocity: [0.6, 0.44, 30.0]
+    min_velocity: [-0.6, -0.44, -30.0]
+    max_accel: [1.0, 0.25, 150.0]
+    max_decel: [-3.0, -1.6, -150.0]
     odom_topic: "/odom/wheel"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
