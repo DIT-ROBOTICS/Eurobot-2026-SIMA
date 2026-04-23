@@ -1,9 +1,15 @@
 sima_navigator:
   ros__parameters:
     sima_id: 4
-    sprint_duration_sec: 2.0
+    sprint_duration_sec: 1.6
     sprint_speed: 0.4
-    start_delay_seconds: 0.0
+    start_delay_seconds: 2.0
+
+    # for only sima 004
+    seq_spin_duration_sec: 1.5   # 旋轉要花幾秒
+    seq_spin_speed: -1.5         # 旋轉速度 (負數為向右，正數向左)
+    seq_forward2_duration_sec: 4.4 # 第二次前進要走幾秒
+    seq_forward2_speed: 0.3      # 第二次前進的速度
 
     # pease
     pantry_A_waypoints: [1.5, 0.5, 2.3, 0.8]
@@ -14,7 +20,7 @@ sima_navigator:
     pantry_E_waypoints: [0.5, 0.0, 1.0, 0.0]
     pantry_F_waypoints: [2.0, 1.2,1.55, 0.85]
     # pantry_F_waypoints: [2.0, 1.2, 1.65, 0.95]
-    pantry_G_waypoints: [1.8, 1.4]
+    pantry_G_waypoints: [2.5, 1.4, 1.89, 1.47]
     # pantry_G_waypoints: [1.8, 1.1, 1.85, 1.3]
     pantry_H_waypoints: [2.25, 0.85]
     # pantry_H_waypoints: [2.35, 0.95]
