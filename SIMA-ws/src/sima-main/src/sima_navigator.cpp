@@ -1281,8 +1281,8 @@ SimaNavigator::SimaNavigator() : Node("sima_navigator")
     current_state_ = State::IDLE;
 
     RCLCPP_INFO(this->get_logger(), "=== SIMA %d Navigator Ready. Waiting for target on topic: %s ===", sima_id_, start_topic.c_str());
-    if (sima_id_ == 4) {
-        RCLCPP_INFO(this->get_logger(), "Notice: SIMA 4 will execute fixed OPEN-LOOP sequence instead of Nav2.");
+    if (sima_id_ == 4 || sima_id_ == 14) {
+        RCLCPP_INFO(this->get_logger(), "Notice: SIMA 4 or 14 will execute fixed OPEN-LOOP sequence instead of Nav2.");
     }
 }
 
