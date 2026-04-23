@@ -768,6 +768,7 @@
 
 #include "sima-main/sima_navigator.hpp"
 #include <cmath>
+#include <sstream>
 
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/buffer.h"
@@ -790,10 +791,21 @@ SimaNavigator::SimaNavigator() : Node("sima_navigator")
     this->declare_parameter("sprint_duration_sec", 1.0);
     this->declare_parameter("sprint_speed", 0.5);
     this->declare_parameter("sima_id", 1);
+
+    // 【新增】宣告 4 號機的特種盲走參數
+    this->declare_parameter("seq_spin_duration_sec", 1.0);
+    this->declare_parameter("seq_spin_speed", -1.5); // 預設負數為向右轉
+    this->declare_parameter("seq_forward2_duration_sec", 1.5);
+    this->declare_parameter("seq_forward2_speed", 0.4);
     
     sprint_duration_sec_ = this->get_parameter("sprint_duration_sec").as_double();
     sprint_speed_ = this->get_parameter("sprint_speed").as_double();
     sima_id_ = this->get_parameter("sima_id").as_int();
+
+    seq_spin_duration_sec_ = this->get_parameter("seq_spin_duration_sec").as_double();
+    seq_spin_speed_ = this->get_parameter("seq_spin_speed").as_double();
+    seq_forward2_duration_sec_ = this->get_parameter("seq_forward2_duration_sec").as_double();
+    seq_forward2_speed_ = this->get_parameter("seq_forward2_speed").as_double();
 
     // QoS for state keeping (Transient Local 讓晚來的訂閱者也能收到最新狀態)
     rclcpp::QoS state_qos(1);
@@ -816,6 +828,7 @@ SimaNavigator::SimaNavigator() : Node("sima_navigator")
     // Initialize Clients
     nav_client_ = rclcpp_action::create_client<NavThroughPoses>(this, "navigate_through_poses");
     vel_smoother_param_client_ = std::make_shared<rclcpp::AsyncParametersClient>(this, "velocity_smoother");
+    global_costmap_param_client_ = std::make_shared<rclcpp::AsyncParametersClient>(this, "global_costmap/global_costmap");
 
     // Initialize Timer
     timer_ = this->create_wall_timer(20ms, std::bind(&SimaNavigator::controlLoop, this));
@@ -823,6 +836,9 @@ SimaNavigator::SimaNavigator() : Node("sima_navigator")
     current_state_ = State::IDLE;
 
     RCLCPP_INFO(this->get_logger(), "=== SIMA %d Navigator Ready. Waiting for target on topic: %s ===", sima_id_, start_topic.c_str());
+    if (sima_id_ == 4) {
+        RCLCPP_INFO(this->get_logger(), "Notice: SIMA 4 will execute fixed OPEN-LOOP sequence instead of Nav2.");
+    }
 }
 
 void SimaNavigator::costmapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
@@ -901,24 +917,91 @@ void SimaNavigator::controlLoop()
         auto elapsed = this->now() - sprint_start_time_;
         if (elapsed.seconds() < sprint_duration_sec_) {
             geometry_msgs::msg::Twist cmd_vel;
-            cmd_vel.linear.x = sprint_speed_ * (elapsed.seconds() / sprint_duration_sec_ * 0.7 + 0.3);
+            cmd_vel.linear.x = sprint_speed_ * calculateVelocityRatio(elapsed.seconds(), sprint_duration_sec_);
             cmd_vel.angular.z = 0.0;
             cmd_vel_pub_->publish(cmd_vel);
         } else {
             stopRobot();
+            // if (sima_id_ == 4) {
+            //     RCLCPP_INFO(this->get_logger(), "Phase 1 (Forward) completed. Starting Phase 2 (Spin Right)...");
+            //     current_state_ = State::SEQ_SPIN;
+            //     seq_start_time_ = this->now();
+            // } else {
+            //     RCLCPP_INFO(this->get_logger(), "Sprint phase completed. Starting navigation phase...");
+            //     current_state_ = State::NAVIGATING;
+            //     executeMission();
+            // }
             RCLCPP_INFO(this->get_logger(), "Sprint phase completed. Starting navigation phase...");
             current_state_ = State::NAVIGATING;
             executeMission();
         }
+    }
+    // 【新增】4 號機第二階段：自轉 (加上梯形曲線防打滑)
+    else if (current_state_ == State::SEQ_SPIN) {
+        auto elapsed = this->now() - seq_start_time_;
+        if (elapsed.seconds() < seq_spin_duration_sec_) {
+            geometry_msgs::msg::Twist cmd_vel;
+            cmd_vel.linear.x = 0.0;
+            
+            // 角速度套用平滑曲線
+            cmd_vel.angular.z = seq_spin_speed_ * calculateVelocityRatio(elapsed.seconds(), seq_spin_duration_sec_); 
+            
+            cmd_vel_pub_->publish(cmd_vel);
+        } else {
+            stopRobot();
+            RCLCPP_INFO(this->get_logger(), "Phase 2 (Spin) completed. Starting Phase 3 (Forward 2)...");
+            current_state_ = State::SEQ_FORWARD_2;
+            seq_start_time_ = this->now();
+        }
+    }
+    // 【新增】4 號機第三階段：前進 (加上梯形曲線防打滑)
+    else if (current_state_ == State::SEQ_FORWARD_2) {
+        auto elapsed = this->now() - seq_start_time_;
+        if (elapsed.seconds() < seq_forward2_duration_sec_) {
+            geometry_msgs::msg::Twist cmd_vel;
+            
+            // 線速度套用平滑曲線
+            cmd_vel.linear.x = seq_forward2_speed_ * calculateVelocityRatio(elapsed.seconds(), seq_forward2_duration_sec_);
+            cmd_vel.angular.z = 0.0;
+            
+            cmd_vel_pub_->publish(cmd_vel);
+        } else {
+            stopRobot();
+            RCLCPP_INFO(this->get_logger(), "Sima 4 Fixed Sequence Completed Successfully!");
+            current_state_ = State::END;
+        }
+    }
+    else if (current_state_ == State::END) {
+        stopRobot();
     }
 }
 
 void SimaNavigator::stopRobot()
 {
     geometry_msgs::msg::Twist cmd_vel;
-    cmd_vel.linear.x = 0.1; // 保持微速前進，視乎你的機構設計
+    cmd_vel.linear.x = 0.0;
     cmd_vel.angular.z = 0.0;
     cmd_vel_pub_->publish(cmd_vel);
+}
+
+double SimaNavigator::calculateVelocityRatio(double elapsed_sec, double total_sec)
+{
+    // 梯形速度曲線 (Trapezoidal Velocity Profile)
+    // 假設前後 30% 的時間用於加減速，最少給予 30% 的基礎動力克服靜摩擦力
+    double ramp_time = total_sec * 0.3;
+    double min_ratio = 0.3;
+    
+    if (elapsed_sec < ramp_time) {
+        // 加速段 (Accel)
+        return min_ratio + (1.0 - min_ratio) * (elapsed_sec / ramp_time);
+    } else if (elapsed_sec > total_sec - ramp_time) {
+        // 減速段 (Decel)
+        double remaining_sec = total_sec - elapsed_sec;
+        return min_ratio + (1.0 - min_ratio) * (remaining_sec / ramp_time);
+    } else {
+        // 勻速段 (Cruise)
+        return 1.0;
+    }
 }
 
 std::vector<std::pair<double, double>> SimaNavigator::parseWaypoints(const std::vector<double>& flat_points){
@@ -996,6 +1079,7 @@ void SimaNavigator::executeMission()
     auto ctrl_msg = std_msgs::msg::String();
     auto plan_msg = std_msgs::msg::String();
     std::vector<rclcpp::Parameter> smoother_params;
+    std::vector<rclcpp::Parameter> costmap_params; // 【新增】Costmap 參數陣列
 
     if (current_mission_ == MissionType::AGGRESSIVE) {
         ctrl_msg.data = "Diff_Aggressive";
@@ -1005,6 +1089,10 @@ void SimaNavigator::executeMission()
             rclcpp::Parameter("max_velocity", std::vector<double>{0.6, 0.0, 30.0}),
             rclcpp::Parameter("max_accel", std::vector<double>{1.0, 0.5, 150.0})
         };
+        costmap_params = {
+            rclcpp::Parameter("inflation_layer.inflation_radius", 0.05),
+            rclcpp::Parameter("inflation_layer.cost_scaling_factor", 5.0) // 降低坡度陡峭感
+        };
     } else {
         ctrl_msg.data = "Diff";
         plan_msg.data = "GridBased_Pease";
@@ -1012,6 +1100,10 @@ void SimaNavigator::executeMission()
         smoother_params = {
             rclcpp::Parameter("max_velocity", std::vector<double>{0.44, 0.44, 12.0}),
             rclcpp::Parameter("max_accel", std::vector<double>{0.25, 0.25, 120.0})
+        };
+        costmap_params = {
+            rclcpp::Parameter("inflation_layer.inflation_radius", 0.12),
+            rclcpp::Parameter("inflation_layer.cost_scaling_factor", 20.0)
         };
     }
 
@@ -1033,6 +1125,24 @@ void SimaNavigator::executeMission()
     } else {
         RCLCPP_WARN(this->get_logger(), "Velocity Smoother param service not available. Speeds remain unchanged.");
     }
+
+    // 【新增】：非同步發送 Global Costmap 參數更新
+    if (global_costmap_param_client_->wait_for_service(std::chrono::milliseconds(500))) {
+        global_costmap_param_client_->set_parameters(costmap_params,
+            [this](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future) {
+                for (auto & result : future.get()) {
+                    if (!result.successful) {
+                        RCLCPP_WARN(this->get_logger(), "Failed to update Costmap param: %s", result.reason.c_str());
+                    } else {
+                        RCLCPP_INFO(this->get_logger(), "Global Costmap inflation dynamically adjusted!");
+                    }
+                }
+            });
+    } else {
+        RCLCPP_WARN(this->get_logger(), "Global Costmap param service not available. Costmap remains unchanged.");
+    }
+
+    rclcpp::sleep_for(std::chrono::milliseconds(50));
 
     // 4. Check Costmap and Generate Path
     {
