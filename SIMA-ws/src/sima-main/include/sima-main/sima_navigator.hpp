@@ -287,6 +287,7 @@
 
 //     // 新增：Velocity Smoother 參數客戶端
 //     std::shared_ptr<rclcpp::AsyncParametersClient> vel_smoother_param_client_;
+//     std::shared_ptr<rclcpp::AsyncParametersClient> global_costmap_param_client_;
 
 //     // Map handling
 //     std::mutex map_mutex_;
@@ -300,8 +301,6 @@
 // } // namespace sima_mission
 
 // #endif // SIMA_MAIN_SIMA_NAVIGATOR_HPP
-
-
 
 
 #ifndef SIMA_MAIN_SIMA_NAVIGATOR_HPP
@@ -415,6 +414,7 @@ private:
     rclcpp::TimerBase::SharedPtr timer_;
     rclcpp_action::Client<NavThroughPoses>::SharedPtr nav_client_;
     std::shared_ptr<rclcpp::AsyncParametersClient> vel_smoother_param_client_;
+    std::shared_ptr<rclcpp::AsyncParametersClient> global_costmap_param_client_;
 
     std::mutex map_mutex_;
     nav_msgs::msg::OccupancyGrid::SharedPtr latest_costmap_;
