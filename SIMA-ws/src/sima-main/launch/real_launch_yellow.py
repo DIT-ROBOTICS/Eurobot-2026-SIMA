@@ -31,7 +31,7 @@ def generate_launch_description():
     )
 
     localization_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(get_package_share_directory('sima-localization-real'), 'launch', 'robot_localization.launch.py')),
+        PythonLaunchDescriptionSource(os.path.join(get_package_share_directory('sima-localization-real'), 'launch', 'robot_localization_yellow.launch.py')),
     )
 
     navigation_cmd = IncludeLaunchDescription(
