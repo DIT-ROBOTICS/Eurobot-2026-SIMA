@@ -1,6 +1,6 @@
 # Name of the domain bridge, used for node naming and logging
 name: my_bridge
-from_domain: 14
+from_domain: 11
 to_domain: 61
 topics:
   # Bridge sima_11/pose/global to multiple domains
@@ -87,6 +87,10 @@ topics:
   robot/startup/sima/start:
     type: std_msgs/msg/Int16
     to_domain: 64
+  
+  robot/startup/game_time:
+    type: std_msgs/msg/Float32
+    to_domain: 61
 
   # Bridge stop signal topic to multiple domains
   robot/startup/sima_game_over:

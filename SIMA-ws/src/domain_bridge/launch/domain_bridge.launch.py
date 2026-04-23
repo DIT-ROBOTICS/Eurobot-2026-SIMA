@@ -14,9 +14,9 @@ def generate_launch_description():
     ros_domain_id = os.getenv('ROS_DOMAIN_ID')
     config_file_path = "domain_bridge-config.yaml"
     if (ros_domain_id == '51'):
-        config_file_path = os.path.join(package_share_dir, 'config', 'domain_bridge-config-A.yaml')
-    elif (ros_domain_id == '61'):
         config_file_path = os.path.join(package_share_dir, 'config', 'domain_bridge-config-B.yaml')
+    elif (ros_domain_id == '61'):
+        config_file_path = os.path.join(package_share_dir, 'config', 'domain_bridge-config-W.yaml')
     else:
         config_file_path = os.path.join(package_share_dir, 'config', 'domain_bridge-config.yaml')
       

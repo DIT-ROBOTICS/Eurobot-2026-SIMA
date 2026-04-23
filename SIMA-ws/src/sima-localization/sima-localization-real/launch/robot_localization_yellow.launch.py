@@ -16,21 +16,21 @@ def generate_launch_description():
     ros_domain_id = os.getenv('ROS_DOMAIN_ID')
 
     if ros_domain_id == '51':
-        parameters_file_name = 'dual_ekf-real-1.yaml'
+        parameters_file_name = 'dual_ekf-real-1-yellow.yaml'
     elif ros_domain_id == '52':
-        parameters_file_name = 'dual_ekf-real-2.yaml'
+        parameters_file_name = 'dual_ekf-real-2-yellow.yaml'
     elif ros_domain_id == '53':
-        parameters_file_name = 'dual_ekf-real-3.yaml'
+        parameters_file_name = 'dual_ekf-real-3-yellow.yaml'
     elif ros_domain_id == '54':
-        parameters_file_name = 'dual_ekf-real-4.yaml'
+        parameters_file_name = 'dual_ekf-real-4-yellow.yaml'
     elif ros_domain_id == '61':
-        parameters_file_name = 'dual_ekf-real-11.yaml'
+        parameters_file_name = 'dual_ekf-real-11-yellow.yaml'
     elif ros_domain_id == '62':
-        parameters_file_name = 'dual_ekf-real-12.yaml'
+        parameters_file_name = 'dual_ekf-real-12-yellow.yaml'
     elif ros_domain_id == '63':
-        parameters_file_name = 'dual_ekf-real-13.yaml'
+        parameters_file_name = 'dual_ekf-real-13-yellow.yaml'
     elif ros_domain_id == '64':
-        parameters_file_name = 'dual_ekf-real-14.yaml'
+        parameters_file_name = 'dual_ekf-real-14-yellow.yaml'
     else:
         parameters_file_name = 'dual_ekf-real.yaml'
     
