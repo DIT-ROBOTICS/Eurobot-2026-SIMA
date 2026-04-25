@@ -101,7 +101,7 @@ ekf_filter_node_map:
 
     use_control: false
 
-    initial_state: [2.5, 1.9, 0.0,
+    initial_state: [2.78, 1.9, 0.0,
                     0.0, 0.0, 4.7124, 
                     0.0, 0.0, 0.0,
                     0.0, 0.0, 0.0, 
