@@ -65,6 +65,11 @@ void VL53Bridge::rawDataCallback(const std_msgs::msg::Float32MultiArray::SharedP
 {
     if (msg->data.size() != sensors_.size()) return;
 
+    // --- 加入以下這兩行來對調左右數據 ---
+    std::vector<float> corrected_data = msg->data;
+    std::swap(corrected_data[0], corrected_data[2]); 
+    // ------------------------------------
+
     rclcpp::Time current_time = this->now();
     sensor_msgs::msg::LaserScan scan_msg;
     scan_msg.header.stamp = current_time;
@@ -89,7 +94,11 @@ void VL53Bridge::rawDataCallback(const std_msgs::msg::Float32MultiArray::SharedP
     double half_fov_clear = deg2rad(half_fov_clear_deg_);     // erase wall marker
 
     for (size_t i = 0; i < sensors_.size(); ++i) {
-        float raw_dist = msg->data[i];
+        // float raw_dist = msg->data[i];
+        // --- 將 msg->data[i] 改為讀取對調後的 corrected_data[i] ---
+        float raw_dist = corrected_data[i]; 
+        // -----------------------------------------------------------
+
         float output_dist = std::numeric_limits<float>::infinity(); // initial output(inf)
 
         if (raw_dist > 0.01f && raw_dist <= max_trust_dist_) {
