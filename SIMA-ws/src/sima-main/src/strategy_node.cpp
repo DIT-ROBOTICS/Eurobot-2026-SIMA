@@ -287,6 +287,9 @@ SimaStrategyNode::SimaStrategyNode() : Node("sima_strategy")
     for (int i = 0; i < max_pantry_to_target_; ++i) {
         std::string topic_name = "/sima_" + std::to_string(i + sima_id_) + "/goal";
         goal_pubs_[i] = this->create_publisher<std_msgs::msg::String>(topic_name, 10);
+
+        std::string adjust_topic = "/sima_" + std::to_string(i + sima_id_) + "/adjust";
+        adjust_pubs_[i] = this->create_publisher<std_msgs::msg::Int16>(adjust_topic, 10);
     }
 
     game_time_sub_ = this->create_subscription<std_msgs::msg::Float32>(
@@ -328,9 +331,50 @@ SimaStrategyNode::SimaStrategyNode() : Node("sima_strategy")
                 calculateAndAssign();
                 has_assigned_ = true;
             }
+
+            // 【新增邏輯】40秒時觸發排隊動作
+            if (elapsed_sec >= 20.0 && !has_triggered_adjust_) {
+                has_triggered_adjust_ = true;
+                RCLCPP_INFO(this->get_logger(), "40 seconds passed! Starting pre-position sequence.");
+                adjust_step_ = 0;
+                // 設定每 4 秒換下一台車出發 (可依實際移動時間調整)
+                adjust_sequence_timer_ = this->create_wall_timer(
+                    std::chrono::seconds(10),
+                    std::bind(&SimaStrategyNode::executeAdjustSequence, this)
+                );
+                executeAdjustSequence(); // 立刻執行第一步 (1號出發)
+            }
         });
     
     RCLCPP_INFO(this->get_logger(), "sima_strategy_node initialized.");
+}
+
+void SimaStrategyNode::executeAdjustSequence() {
+    if (has_assigned_) { 
+        // 如果已經收到提早的正式開賽訊號，立刻中斷
+        if(adjust_sequence_timer_) adjust_sequence_timer_->cancel();
+        return;
+    }
+
+    int target_idx = -1;
+    // 陣列 index 0,1,2,3 對應機器人 ID 1,2,3,4 (或 11,12,13,14)
+    if (adjust_step_ == 0) target_idx = 0;      // 1號 (11號)
+    else if (adjust_step_ == 1) target_idx = 1; // 2號 (12號)
+    else if (adjust_step_ == 2) target_idx = 3; // 4號 (14號)
+    else if (adjust_step_ == 3) target_idx = 2; // 3號 (13號)
+
+    if (target_idx != -1 && adjust_pubs_.count(target_idx)) {
+        auto msg = std_msgs::msg::Int16();
+        msg.data = 1;
+        adjust_pubs_[target_idx]->publish(msg);
+        RCLCPP_INFO(this->get_logger(), "Triggering adjust sequence for SIMA ID: %d", sima_id_ + target_idx);
+    }
+
+    adjust_step_++;
+    if (adjust_step_ >= 4) {
+        RCLCPP_INFO(this->get_logger(), "Pre-position sequence completed.");
+        adjust_sequence_timer_->cancel();
+    }
 }
 
 void SimaStrategyNode::startCallback(const std_msgs::msg::Int16::SharedPtr msg) {

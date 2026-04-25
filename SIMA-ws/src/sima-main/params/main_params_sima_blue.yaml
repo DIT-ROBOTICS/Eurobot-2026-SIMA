@@ -1,7 +1,19 @@
 sima_navigator:
   ros__parameters:
     sima_id: 1
-    sprint_duration_sec: 1.5
+
+    # adjusting phase
+    pre_pos_fwd1_sec: 2.6
+    pre_pos_fwd1_speed: 0.15
+    pre_pos_spin1_sec: 1.4
+    pre_pos_spin1_speed: -1.5  # 負數向右轉
+    pre_pos_fwd2_sec: 2.2      # 第二段走比較久
+    pre_pos_fwd2_speed: 0.2    # 第二段速度稍快
+    pre_pos_spin2_sec: 1.0
+    pre_pos_spin2_speed: 1.5   # 正數向左轉
+
+    # sprinting phase
+    sprint_duration_sec: 3.0
     sprint_speed: 0.5
     start_delay_seconds: 0.0
 
@@ -60,22 +72,22 @@ sima_strategy:
 
     # pease/normal
     pantry_A_time_normal: 50.0 
-    pantry_B_time_normal: 14.1
-    pantry_C_time_normal: 14.0
-    pantry_D_time_normal: 12.10
+    pantry_B_time_normal: 50.0
+    pantry_C_time_normal: 50.0
+    pantry_D_time_normal: 13.0
     pantry_E_time_normal: 12.09
     pantry_F_time_normal: 12.12
     pantry_G_time_normal: 13.0
-    pantry_H_time_normal: 14.9 #7.55
+    pantry_H_time_normal: 7.55
     pantry_I_time_normal: 7.45
     pantry_J_time_normal: 7.35
 
     # aggressive
-    pantry_A_time_aggressive: 50.0 
+    pantry_A_time_aggressive: 14.3 
     pantry_B_time_aggressive: 14.1
-    pantry_C_time_aggressive: 14.0
-    pantry_D_time_aggressive: 12.10
-    pantry_E_time_aggressive: 50.0
+    pantry_C_time_aggressive: 14.2
+    pantry_D_time_aggressive: 13.0
+    pantry_E_time_aggressive: 12.09
     pantry_F_time_aggressive: 12.12
     pantry_G_time_aggressive: 13.0
     pantry_H_time_aggressive: 7.55

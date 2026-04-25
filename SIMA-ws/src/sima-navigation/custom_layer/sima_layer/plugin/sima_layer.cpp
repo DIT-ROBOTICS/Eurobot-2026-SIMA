@@ -106,40 +106,6 @@ void SIMALayer::onInitialize()
                 this->last_seen_sima4_time_ = this->node_.lock()->now();
             });
     }
-
-    // Subscribe to other simas' pose topics
-    sima1_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-        "/sima_1/pose/global", 10,
-        [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
-            std::lock_guard<std::mutex> lock(this->data_mutex_);
-            this->sima1_pose_ = msg->pose.pose;
-            this->sima1_pose_received_ = true;
-            this->last_seen_sima1_time_ = this->node_.lock()->now();
-        });
-    sima2_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-        "/sima_2/pose/global", 10,
-        [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
-            std::lock_guard<std::mutex> lock(this->data_mutex_);
-            this->sima2_pose_ = msg->pose.pose;
-            this->sima2_pose_received_ = true;
-            this->last_seen_sima2_time_ = this->node_.lock()->now();
-        });
-    sima3_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-        "/sima_3/pose/global", 10,
-        [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
-            std::lock_guard<std::mutex> lock(this->data_mutex_);
-            this->sima3_pose_ = msg->pose.pose;
-            this->sima3_pose_received_ = true;
-            this->last_seen_sima3_time_ = this->node_.lock()->now();
-        });
-    sima4_pose_sub_ = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-        "/sima_4/pose/global", 10,
-        [this](const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
-            std::lock_guard<std::mutex> lock(this->data_mutex_);
-            this->sima4_pose_ = msg->pose.pose;
-            this->sima4_pose_received_ = true;
-            this->last_seen_sima4_time_ = this->node_.lock()->now();
-        });
 }
 
 void SIMALayer::reset()
