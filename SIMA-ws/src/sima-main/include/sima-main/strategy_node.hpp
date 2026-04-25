@@ -126,7 +126,10 @@ private:
     void sortByDistance(std::vector<Pantry>& pantries, std::string order = "ascending");
     void addToSelected(std::vector<Pantry>& pantries, std::vector<Pantry>& selected, PantryStatus target_status);
 
+    void executeAdjustSequence();
+
     std::map<int, rclcpp::Publisher<std_msgs::msg::String>::SharedPtr> goal_pubs_;
+    std::map<int, rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr> adjust_pubs_;
     rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr start_sub_;
     rclcpp::Subscription<std_msgs::msg::Int32MultiArray>::SharedPtr pantry_status_sub_;
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr game_time_sub_;
@@ -142,6 +145,10 @@ private:
 
     int last_start_signal_ = 0;
     bool has_assigned_ = false;
+
+    bool has_triggered_adjust_ = false;
+    int adjust_step_ = 0;
+    rclcpp::TimerBase::SharedPtr adjust_sequence_timer_;
 
     std::vector<int> pantry_status_data_ = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 

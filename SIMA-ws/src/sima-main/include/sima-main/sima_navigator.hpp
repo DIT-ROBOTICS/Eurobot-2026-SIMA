@@ -319,6 +319,7 @@
 #include "rclcpp/parameter_client.hpp" 
 
 #include "std_msgs/msg/string.hpp"
+#include "std_msgs/msg/int16.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
@@ -357,6 +358,7 @@ private:
     // 【修改】擴增狀態機，加入 4 號機專用的盲走狀態
     enum class State {
         IDLE,
+        PRE_POSITIONING,
         DELAYING,
         SPRINTING,       // 共用：1~3 號的衝刺，以及 4 號的「第一段前進」
         SEQ_SPIN,        // 4 號專用：原地向右轉
@@ -366,6 +368,7 @@ private:
     };
 
     void startCallback(const std_msgs::msg::String::SharedPtr msg);
+    void adjustCallback(const std_msgs::msg::Int16::SharedPtr msg);
     void costmapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
     void controlLoop();
 
@@ -402,9 +405,26 @@ private:
     double seq_forward2_speed_;
     rclcpp::Time seq_start_time_;
 
+    // 【新增】排隊調整位置用的變數與參數
+    int pre_pos_step_ = 0;
+    rclcpp::Time pre_pos_timer_;
+    
+    // 第一段：前進與旋轉
+    double pre_pos_fwd1_sec_;
+    double pre_pos_fwd1_speed_;
+    double pre_pos_spin1_sec_;
+    double pre_pos_spin1_speed_;
+
+    // 第二段：前進與旋轉
+    double pre_pos_fwd2_sec_;
+    double pre_pos_fwd2_speed_;
+    double pre_pos_spin2_sec_;
+    double pre_pos_spin2_speed_;
+
     bool is_navigating_ = false;
 
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr start_sub_;
+    rclcpp::Subscription<std_msgs::msg::Int16>::SharedPtr adjust_sub_; // 【新增】
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_sub_;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
     

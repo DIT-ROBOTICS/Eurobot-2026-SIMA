@@ -126,23 +126,23 @@ controller_server:
     # Controller parameters
     Diff:
       plugin: "diff_controller::DiffController"
-      desired_linear_vel: 0.44
-      lookahead_dist: 0.15
-      max_angular_vel: 2.4
+      desired_linear_vel: 0.55
+      lookahead_dist: 0.25
+      max_angular_vel: 3.0
       min_linear_vel: 0.0
       min_approach_linear_vel: 0.01
-      approach_dist: 0.35
+      approach_dist: 0.5
       transform_tolerance: 0.1
       heading_rotate_threshold: 0.6 # rad, about 46 degrees
-      heading_slowdown_threshold: 0.5 # rad, about  degrees
-      heading_kp: 2.2
+      heading_slowdown_threshold: 0.3 # rad, about  degrees
+      heading_kp: 2.0
       min_turning_linear_vel: 0.01
-      max_acc_linear: 0.22 # m/s^2
-      max_acc_angular: 3.0 # rad/s^2
-      max_decel_linear: 1.8 # m/s^2
-      max_decel_linear_emergency: 2.0 # m/s^2
-      max_decel_angular: 4.0 # rad/s^2
-      curvature_weight: 0.3 # weight for curvature in cost function
+      max_acc_linear: 0.2 # m/s^2
+      max_acc_angular: 6.0 # rad/s^2
+      max_decel_linear: 2.2 # m/s^2
+      max_decel_linear_emergency: 4.0 # m/s^2
+      max_decel_angular: 8.0 # rad/s^2
+      curvature_weight: 0. # weight for curvature in cost function
       # allow_unknown: True
     
     Diff_Aggressive:
@@ -365,7 +365,7 @@ global_costmap:
         plugin: "SIMA_costmap_plugin::SIMALayer"
         enabled: True
         sima_radius: 0.075
-        inflation_radius: 0.2
+        inflation_radius: 0.08
         cost_scaling_factor: 3.0
         sima_id: 12
         tolerance_timeout: 1.0 # seconds to consider sima pose valid
@@ -528,26 +528,26 @@ planner_server:
       allow_unknown: false
     
     GridBased_Pease:
-      # plugin: "nav2_navfn_planner/NavfnPlanner"
-      # tolerance: 0.02
-      # use_astar: True
-      # allow_unknown: false
-
-      plugin: "nav2_smac_planner/SmacPlanner2D"
-      tolerance: 0.05
+      plugin: "nav2_navfn_planner/NavfnPlanner"
+      tolerance: 0.02
+      use_astar: True
       allow_unknown: false
+
+      # plugin: "nav2_smac_planner/SmacPlanner2D"
+      # tolerance: 0.05
+      # allow_unknown: false
       
-      # 🌟 【防鑽縫神器】：懲罰係數
-      # 數值越大，Planner 越討厭 Inflation 區域，會強制讓路徑保持在通道正中央
-      cost_penalty: 30.0 
+      # # 🌟 【防鑽縫神器】：懲罰係數
+      # # 數值越大，Planner 越討厭 Inflation 區域，會強制讓路徑保持在通道正中央
+      # cost_penalty: 30.0 
       
-      # 距離與成本的權重比例
-      cost_travel_multiplier: 15.0
+      # # 距離與成本的權重比例
+      # cost_travel_multiplier: 15.0
       
-      # 平滑化設定，讓路徑不要像鋸齒狀
-      smoother_max_iterations: 10
-      smoother_on_update: True
-      smoother_do_refinement: True
+      # # 平滑化設定，讓路徑不要像鋸齒狀
+      # smoother_max_iterations: 10
+      # smoother_on_update: True
+      # smoother_do_refinement: True
 
       # plugin: "nav2_smac_planner/SmacPlanner2D"
       # tolerance: 0.02

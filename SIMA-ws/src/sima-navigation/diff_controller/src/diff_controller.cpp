@@ -455,7 +455,7 @@ namespace diff_controller
         // Adjust Lookahead Distance by current speed (Adaptive Lookahead)
         double current_speed = std::abs(velocity.linear.x);
         // double adaptive_lookahead = std::clamp(current_speed * 0.8, 0.1, lookahead_dist_);
-        double adaptive_lookahead = std::clamp(current_speed * lookahead_dist_ / desired_linear_vel_, 0.15, lookahead_dist_);
+        double adaptive_lookahead = std::clamp(current_speed * lookahead_dist_ / desired_linear_vel_, 0.25, lookahead_dist_);
 
         // Find Lookahead Point
         auto it = std::find_if(
@@ -510,52 +510,187 @@ namespace diff_controller
             }
 
         } else {
-            // --- 6. 正常移動邏輯 (Moving Logic) ---
+            // // --- 6. 正常移動邏輯 (Moving Logic) ---
             
-            // A. 計算前方最大曲率，用於減速
-            double max_curvature_ahead = findMaxCurvature(transformed_plan, lookahead_index);
+            // // A. 計算前方最大曲率，用於減速
+            // double max_curvature_ahead = findMaxCurvature(transformed_plan, lookahead_index);
             
-            // B. 基於曲率的速度限制 (Curvature Slowdown)
-            // 公式： v = v_des / (1 + w * k)
-            double curvature_slowdown_factor = 0.5; // 可調整係數，越大過彎越慢
-            double regulated_linear_vel = desired_linear_vel_ / (1.0 + curvature_slowdown_factor * max_curvature_ahead);
+            // // B. 基於曲率的速度限制 (Curvature Slowdown)
+            // // 公式： v = v_des / (1 + w * k)
+            // double curvature_slowdown_factor = 0.5; // 可調整係數，越大過彎越慢
+            // double regulated_linear_vel = desired_linear_vel_ / (1.0 + curvature_slowdown_factor * max_curvature_ahead);
 
-            // C. 基於 Heading Error 的速度限制 (Heading Slowdown)
-            // 當稍微有點偏時，也稍微減速，讓轉向更準
-            if (std::abs(heading_error) > heading_slowdown_threshold_) {
-                 double heading_scale = 1.0 - (std::abs(heading_error) - heading_slowdown_threshold_) / 
-                                              std::max(heading_rotate_threshold_ - heading_slowdown_threshold_, 1e-6);
-                 regulated_linear_vel *= std::clamp(heading_scale, 0.7, 1.0);
+            // // C. 基於 Heading Error 的速度限制 (Heading Slowdown)
+            // // 當稍微有點偏時，也稍微減速，讓轉向更準
+            // if (std::abs(heading_error) > heading_slowdown_threshold_) {
+            //      double heading_scale = 1.0 - (std::abs(heading_error) - heading_slowdown_threshold_) / 
+            //                                   std::max(heading_rotate_threshold_ - heading_slowdown_threshold_, 1e-6);
+            //      regulated_linear_vel *= std::clamp(heading_scale, 0.7, 1.0);
+            // }
+
+            // // D. 靠近終點減速 (Approach Slowdown)
+            // double dist_to_goal = hypot(transformed_plan.poses.back().pose.position.x, 
+            //                             transformed_plan.poses.back().pose.position.y);
+            // if (dist_to_goal < approach_dist_) {
+            //     regulated_linear_vel = std::min(regulated_linear_vel, 
+            //         (dist_to_goal / 2 / approach_dist_) * desired_linear_vel_);
+            //     regulated_linear_vel = std::max(regulated_linear_vel, min_approach_linear_vel_);
+            // }
+
+            // // 確保不低於最小速度 (除非很靠近終點)
+            // if (dist_to_goal > 0.01) { // 5cm 容差
+            //     regulated_linear_vel = std::max(regulated_linear_vel, min_turning_linear_vel_);
+            // } else {
+            //     regulated_linear_vel = 0.0; // 到達終點
+            // }
+            
+            // target_linear_vel = regulated_linear_vel;
+
+            // // // E. 計算角速度 (Kp + Curvature Feedforward)
+            // // double dist_sq = x*x + y*y;
+            // // double curvature_term = 0.0;
+            // // if (dist_sq > 1e-6) {
+            // //     // Pure Pursuit Curvature Formula: 2y / L^2
+            // //     curvature_term = 2.0 * y / dist_sq;
+            // // }
+
+            // // // 混合控制：Heading Kp 為主，Curvature 為輔
+            // // target_angular_vel = (heading_kp_ * heading_error) + (curvature_weight_ * curvature_term * target_linear_vel);
+            // // target_angular_vel = clampAbs(target_angular_vel, max_angular_vel_);
+
+            // // E. 計算角速度 (改為正統 Pure Pursuit 為主)
+            // double dist_sq = x*x + y*y;
+            
+            // if (dist_sq > 1e-6) {
+            //     // Pure Pursuit 角速度公式： omega = (2 * y / L^2) * v
+            //     double pure_pursuit_omega = (2.0 * y / dist_sq) * target_linear_vel;
+                
+            //     // 移除生硬的 Kp 相加，改用標準的純追跡輸出，或在此加入微弱的 Kp 修正(僅在極低速時)
+            //     target_angular_vel = pure_pursuit_omega; 
+
+            //     // 若依然希望在直線稍微偏離時加速修正，可採用以下混合（但不建議 Kp 過大）：
+            //     // target_angular_vel = pure_pursuit_omega + (heading_kp_ * heading_error * (1.0 - (target_linear_vel/desired_linear_vel_)));
+            // } else {
+            //     target_angular_vel = 0.0;
+            // }
+
+            // target_angular_vel = clampAbs(target_angular_vel, max_angular_vel_);
+
+
+
+            // --- 正常移動邏輯 (Moving Logic) ---
+            
+            // A & B: 利用運動學模型，直接獲取「為了過前方的彎，現在必須維持的安全速度」
+            double regulated_linear_vel = calculateDynamicSafeSpeed(transformed_plan);
+
+            // --- 終點減速與停止邏輯 (含定位延遲補償) ---
+            
+            // 1. 獲取測量到的剩餘距離
+            double measured_dist = std::hypot(transformed_plan.poses.back().pose.position.x, 
+                                              transformed_plan.poses.back().pose.position.y);
+            
+            // 2. 預估定位延遲 (0.2秒延遲其實滿大的，若還是太早停可以考慮微調至 0.1~0.15)
+            const double localization_delay = 0.2; 
+            
+            // 3. 計算預測距離 (僅用於觸發停止與緩行，不參與減速曲線計算，避免震盪)
+            double current_linear_speed = std::abs(velocity.linear.x);
+            double predicted_dist = measured_dist - (current_linear_speed * localization_delay);
+            
+            // 確保預測距離不會變成負數
+            predicted_dist = std::max(0.0, predicted_dist);
+
+            if (measured_dist < approach_dist_) {
+                // 【核心修正】：這裡必須用 measured_dist 來算根號！
+                // 這樣才能維持恆定減速度的物理特性，確保過程滑順舒適。
+                double approach_ratio = std::sqrt(measured_dist / approach_dist_);
+                double approach_vel = 0.8 * approach_ratio * desired_linear_vel_;
+                
+                // 終端緩行區邏輯 (使用 predicted_dist 提早觸發緩行)
+                if (predicted_dist < 0.10) {
+                    approach_vel = std::min(approach_vel, 0.05); 
+                }
+                regulated_linear_vel = std::min(regulated_linear_vel, approach_vel);
             }
 
-            // D. 靠近終點減速 (Approach Slowdown)
-            double dist_to_goal = hypot(transformed_plan.poses.back().pose.position.x, 
-                                        transformed_plan.poses.back().pose.position.y);
-            if (dist_to_goal < approach_dist_) {
-                regulated_linear_vel = std::min(regulated_linear_vel, 
-                    (dist_to_goal / approach_dist_) * desired_linear_vel_);
-                regulated_linear_vel = std::max(regulated_linear_vel, min_approach_linear_vel_);
-            }
-
-            // 確保不低於最小速度 (除非很靠近終點)
-            if (dist_to_goal > 0.01) { // 5cm 容差
+            // --- 停止判定：當「預測」已經抵達，或是「測量」已經進到極小範圍 ---
+            if (predicted_dist > 0.015 && measured_dist > 0.02) { 
                 regulated_linear_vel = std::max(regulated_linear_vel, min_turning_linear_vel_);
             } else {
-                regulated_linear_vel = 0.0; // 到達終點
+                regulated_linear_vel = 0.0; // 預測抵達，立即停機
+            }
+
+            // 提前計算 alpha (預視點夾角)
+            double alpha = std::atan2(y, x);
+
+            // 【新增】：出彎防暴衝機制 (Steering-Throttle Linkage)
+            // 利用 yaml 中已有的 heading_slowdown_threshold_ 參數
+            if (std::abs(alpha) > heading_slowdown_threshold_) {
+                // 當夾角超過閾值，開始平滑扣減速度 (最多打 5 折)
+                // 這裡的 0.5 是一個平滑區間，代表超過閾值 0.5 rad 時速度會降到最低
+                double penalty = (std::abs(alpha) - heading_slowdown_threshold_) / 0.5;
+                double scale = std::clamp(1.0 - penalty, 0.5, 1.0); 
+                
+                regulated_linear_vel *= scale;
             }
             
             target_linear_vel = regulated_linear_vel;
 
-            // E. 計算角速度 (Kp + Curvature Feedforward)
-            double dist_sq = x*x + y*y;
-            double curvature_term = 0.0;
+            // // --- E. 尋跡時的角速度修正 (混合 Pure Pursuit 與 P Control) ---
+            // double dist_sq = x * x + y * y;
+            
+            // double pure_pursuit_omega = 0.0;
+            // if (dist_sq > 1e-6) {
+            //     // 正統純追跡公式 (Feedforward)：根據當下速度與幾何半徑，主動給出完美過彎角速度
+            //     pure_pursuit_omega = (2.0 * y / dist_sq) * target_linear_vel;
+            // }
+
+            // // 輔助的 Kp 修正 (Feedback)：用來修正車頭微小偏移，確保直線不蛇行
+            // // 因為主力已經交給 pure_pursuit_omega，這裡的 Kp 可以大幅降低，避免震盪
+            // double forward_tracking_kp = 1.05; 
+            
+            // // 最終角速度 = 幾何過彎需求 + 航向誤差修正
+            // target_angular_vel = pure_pursuit_omega + (forward_tracking_kp * alpha);
+
+            // // 限制輸出範圍
+            // target_angular_vel = clampAbs(target_angular_vel, max_angular_vel_);
+
+            // // 高速防震盪衰減
+            // double speed_ratio = target_linear_vel / (desired_linear_vel_ + 1e-6);
+            // target_angular_vel *= (1.0 - 0.2 * speed_ratio);
+
+            // target_angular_vel = clampAbs(target_angular_vel, max_angular_vel_);
+
+            // --- E. 尋跡時的角速度修正 (抗重規劃震盪版) ---
+            double dist_sq = x * x + y * y;
+            
             if (dist_sq > 1e-6) {
-                // Pure Pursuit Curvature Formula: 2y / L^2
-                curvature_term = 2.0 * y / dist_sq;
+                // 1. 純追跡基底 (Pure Pursuit) - 負責提供完美的幾何過彎力道
+                target_angular_vel = (2.0 * y / dist_sq) * target_linear_vel;
+            } else {
+                target_angular_vel = 0.0;
             }
 
-            // 混合控制：Heading Kp 為主，Curvature 為輔
-            target_angular_vel = (heading_kp_ * heading_error) + (curvature_weight_ * curvature_term * target_linear_vel);
+            // 2. 移除前一版的 Kp * alpha。
+            // (Pure Pursuit 本身就足夠處理微小偏差，疊加 Kp 反而容易過度反應)
+
+            // 3. 【核心修正】：加入主動阻尼 (Active Damping / Derivative Control)
+            // velocity.angular.z 是機器人當下真實的轉速 (來自 Odometry)
+            // 當機器人擺頭速度過快時，產生反向的抵抗力，像避震器一樣吸收 Overshoot 的能量！
+            // 建議範圍 0.2 ~ 0.6，這會讓直線循跡變得異常死沉、穩定。
+            double damping_kd = 0.2; 
+            target_angular_vel -= damping_kd * velocity.angular.z;
+
+            // 4. 【核心修正】：加入低通濾波器 (Low-Pass Filter / EMA)
+            // 專門撫平 Planner 頻繁 replan 造成的「預視點瞬移雜訊」
+            const double filter_weight = 0.5; // (0.0~1.0)，0.5 代表新舊指令各佔一半，非常滑順
+            if (last_time_.nanoseconds() != 0) {
+                target_angular_vel = filter_weight * target_angular_vel + (1.0 - filter_weight) * last_angular_vel_;
+            }
+
+            // 高速防震盪衰減 (保留這個好設計，高速時方向盤變重)
+            double speed_ratio = target_linear_vel / (desired_linear_vel_ + 1e-6);
+            target_angular_vel *= (1.0 - 0.2 * speed_ratio);
+
             target_angular_vel = clampAbs(target_angular_vel, max_angular_vel_);
         }
 
@@ -657,37 +792,139 @@ namespace diff_controller
     }
 
     double DiffController::findMaxCurvature(
-        const nav_msgs::msg::Path & transformed_plan,
-        size_t lookahead_index)
+        const nav_msgs::msg::Path & transformed_plan) // 移除 lookahead_index 參數
     {
-        // 往前檢查約 4 倍車身距離 (0.6m)
-        const double inspection_dist = 0.1; 
+        // 往前看 0.5 到 0.6 公尺 (足以覆蓋目前的煞車距離)
+        const double inspection_dist = 0.5; 
         double max_kappa = 0.0;
         
-        for (size_t i = lookahead_index; i < transformed_plan.poses.size() - 1; ++i) {
-            const auto & p1 = transformed_plan.poses[i].pose.position;
-            
-            // 計算與 Lookahead 點的距離
-            double dist = std::hypot(
-                p1.x - transformed_plan.poses[lookahead_index].pose.position.x,
-                p1.y - transformed_plan.poses[lookahead_index].pose.position.y);
-            
-            if (dist > inspection_dist) break;
+        if (transformed_plan.poses.size() < 4) return 0.0; 
 
-            // 簡單估算該點相對於 Robot 的曲率 (2y / d^2)
-            // 注意：這裡是簡化版，假設 p1 是在 robot frame 下的點。
-            // 嚴謹做法應該計算 p[i], p[i+1], p[i+2] 的幾何曲率，但運算量較大。
-            // 鑑於 transformed_plan 已經是 Robot Frame，我們直接用點的座標估算：
-            double d2 = p1.x * p1.x + p1.y * p1.y;
-            if (d2 > 1e-4) {
-                double kappa = std::abs(2.0 * p1.y / d2);
-                // 限制異常值
-                if (kappa < 10.0) { 
-                    if (kappa > max_kappa) max_kappa = kappa;
+        // 基準點：車體當前位置
+        auto base_pt = transformed_plan.poses[0].pose.position;
+
+        // 注意這裡：從 index = 2 開始找 (略過0和1避免里程計座標的極小震盪雜訊)
+        for (size_t i = 2; i < transformed_plan.poses.size() - 2; ++i) {
+            const auto & p1 = transformed_plan.poses[i].pose.position;
+            const auto & p2 = transformed_plan.poses[i+1].pose.position;
+            const auto & p3 = transformed_plan.poses[i+2].pose.position;
+            
+            // 計算距離車體的距離
+            double dist = std::hypot(p1.x - base_pt.x, p1.y - base_pt.y);
+            if (dist > inspection_dist) break; // 超過檢查範圍就停止
+
+            // 計算三邊長
+            double a = std::hypot(p2.x - p3.x, p2.y - p3.y);
+            double b = std::hypot(p1.x - p3.x, p1.y - p3.y);
+            double c = std::hypot(p1.x - p2.x, p1.y - p2.y);
+
+            double cross_product = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
+            double area = 0.5 * std::abs(cross_product);
+
+            double denominator = a * b * c;
+            if (denominator > 1e-6) {
+                double kappa = (4.0 * area) / denominator;
+                if (kappa < 15.0 && kappa > max_kappa) { // 稍微放寬上限到 15 (半徑約 6.6cm)
+                    max_kappa = kappa;
                 }
             }
         }
         return max_kappa;
+    }
+
+    // 傳回：當前機器人「現在」應該保持的安全速度
+    double DiffController::calculateDynamicSafeSpeed(const nav_msgs::msg::Path & plan)
+    {
+        double current_safe_speed = desired_linear_vel_;
+        
+        // --- 物理參數設定 ---
+        const double a_lat_max = 0.35; // 最大側向加速度 (越大過彎越快)
+        // 為了安全，煞車規劃時只信任 80% 的最大減速度
+        const double planning_decel = max_decel_linear_ * 0.4; 
+        
+        // --- 空間解析度設定 (解決點太密集的問題) ---
+        // 強制要求相鄰兩個取樣點至少要間隔 10 公分 (約等於車身長度)
+        const double baseline_dist = 0.1; 
+        
+        // 往前掃描距離：至少要能涵蓋「從極速煞停」的距離 ( 0.55^2 / (2 * 2.2) 約為 0.07m，加上安全餘裕看 0.6m 絕對夠)
+        const double max_scan_dist = 0.6; 
+
+        if (plan.poses.size() < 3) return min_turning_linear_vel_;
+
+        auto base_pt = plan.poses[0].pose.position;
+
+        // 沿著路徑往前掃描
+        for (size_t i = 0; i < plan.poses.size(); ++i) {
+            const auto & p1 = plan.poses[i].pose.position;
+            double dist_to_curve = std::hypot(p1.x - base_pt.x, p1.y - base_pt.y);
+
+            if (dist_to_curve > max_scan_dist) break;
+
+            // 尋找距離 p1 至少 baseline_dist 的點 p2
+            size_t idx2 = i + 1;
+            while (idx2 < plan.poses.size() && 
+                   std::hypot(plan.poses[idx2].pose.position.x - p1.x, 
+                              plan.poses[idx2].pose.position.y - p1.y) < baseline_dist) {
+                idx2++;
+            }
+            if (idx2 >= plan.poses.size()) break;
+            const auto & p2 = plan.poses[idx2].pose.position;
+
+            // 尋找距離 p2 至少 baseline_dist 的點 p3
+            size_t idx3 = idx2 + 1;
+            while (idx3 < plan.poses.size() && 
+                   std::hypot(plan.poses[idx3].pose.position.x - p2.x, 
+                              plan.poses[idx3].pose.position.y - p2.y) < baseline_dist) {
+                idx3++;
+            }
+            if (idx3 >= plan.poses.size()) break;
+            const auto & p3 = plan.poses[idx3].pose.position;
+
+            // 計算真實幾何曲率 (Menger Curvature)
+            double a = std::hypot(p2.x - p3.x, p2.y - p3.y);
+            double b = std::hypot(p1.x - p3.x, p1.y - p3.y);
+            double c = std::hypot(p1.x - p2.x, p1.y - p2.y);
+
+            double cross_product = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
+            double area = 0.5 * std::abs(cross_product);
+            double kappa = 0.0;
+            double denominator = a * b * c;
+
+            if (denominator > 1e-6) {
+                kappa = (4.0 * area) / denominator;
+            }
+
+            // 如果該區域有明顯彎道 (曲率大於 0.5 才視為彎道，過濾直線雜訊)
+            // 如果該區域有明顯彎道
+            if (kappa > 0.5) {
+                // 限制 1: 動態極限 (防打滑)
+                // 這裡的 dynamic_a_lat_max 可以是你用 mu * g 計算出來的，或手動設定的 0.6
+                double v_dynamic = std::sqrt(a_lat_max / kappa);
+
+                // 限制 2: 運動學極限 (防外拋)
+                // 注意：我們故意只取 max_angular_vel_ 的 80%~90% 作為可用上限。
+                // 為什麼？因為要留一點角速度的「餘裕」給 P Controller 去修正循跡誤差。
+                // 如果把可用角速度算得太滿，一但有微小誤差，馬達就沒有額外的出力可以修正了。
+                double available_omega = max_angular_vel_ * 0.5; 
+                double v_kinematic = available_omega / kappa;
+
+                // 綜合兩者，取最嚴格的安全速度
+                double v_curve = std::min(v_dynamic, v_kinematic);
+                
+                // 確保不低於最小轉彎速度，不超過直線目標速度
+                v_curve = std::clamp(v_curve, min_turning_linear_vel_, desired_linear_vel_);
+
+                // 運動學反推：為抵達彎道降至 v_curve，現在的安全速度？
+                double v_safe_now = std::sqrt(v_curve * v_curve + 2.0 * planning_decel * dist_to_curve);
+
+                // 更新當前最嚴格的安全速度
+                if (v_safe_now < current_safe_speed) {
+                    current_safe_speed = v_safe_now;
+                }
+            }
+        }
+
+        return current_safe_speed;
     }
 
 
