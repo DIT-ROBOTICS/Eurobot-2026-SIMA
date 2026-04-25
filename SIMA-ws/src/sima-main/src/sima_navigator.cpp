@@ -1240,6 +1240,18 @@ SimaNavigator::SimaNavigator() : Node("sima_navigator")
     this->declare_parameter("seq_spin_speed", -1.5); // 預設負數為向右轉
     this->declare_parameter("seq_forward2_duration_sec", 1.5);
     this->declare_parameter("seq_forward2_speed", 0.4);
+
+    // 第一段參數
+    this->declare_parameter("pre_pos_fwd1_sec", 0.5);
+    this->declare_parameter("pre_pos_fwd1_speed", 0.3);
+    this->declare_parameter("pre_pos_spin1_sec", 0.5);
+    this->declare_parameter("pre_pos_spin1_speed", 0.5);
+    
+    // 第二段參數
+    this->declare_parameter("pre_pos_fwd2_sec", 0.5);
+    this->declare_parameter("pre_pos_fwd2_speed", 0.3);
+    this->declare_parameter("pre_pos_spin2_sec", 0.5);
+    this->declare_parameter("pre_pos_spin2_speed", 0.5);
     
     // 【新增】宣告 4 號機的特種盲走參數
     this->declare_parameter("seq_spin_duration_sec", 1.0);
@@ -1256,6 +1268,18 @@ SimaNavigator::SimaNavigator() : Node("sima_navigator")
     seq_forward2_duration_sec_ = this->get_parameter("seq_forward2_duration_sec").as_double();
     seq_forward2_speed_ = this->get_parameter("seq_forward2_speed").as_double();
 
+    // 讀取第一段參數
+    pre_pos_fwd1_sec_ = this->get_parameter("pre_pos_fwd1_sec").as_double();
+    pre_pos_fwd1_speed_ = this->get_parameter("pre_pos_fwd1_speed").as_double();
+    pre_pos_spin1_sec_ = this->get_parameter("pre_pos_spin1_sec").as_double();
+    pre_pos_spin1_speed_ = this->get_parameter("pre_pos_spin1_speed").as_double();
+
+    // 讀取第二段參數
+    pre_pos_fwd2_sec_ = this->get_parameter("pre_pos_fwd2_sec").as_double();
+    pre_pos_fwd2_speed_ = this->get_parameter("pre_pos_fwd2_speed").as_double();
+    pre_pos_spin2_sec_ = this->get_parameter("pre_pos_spin2_sec").as_double();
+    pre_pos_spin2_speed_ = this->get_parameter("pre_pos_spin2_speed").as_double();
+
     // QoS for state keeping (Transient Local 讓晚來的訂閱者也能收到最新狀態)
     rclcpp::QoS state_qos(1);
     state_qos.transient_local();
@@ -1268,6 +1292,10 @@ SimaNavigator::SimaNavigator() : Node("sima_navigator")
     std::string start_topic = "/sima_" + std::to_string(sima_id_) + "/goal";
     start_sub_ = this->create_subscription<std_msgs::msg::String>(
         start_topic, 10, std::bind(&SimaNavigator::startCallback, this, std::placeholders::_1));
+    
+    std::string adjust_topic = "/sima_" + std::to_string(sima_id_) + "/adjust";
+    adjust_sub_ = this->create_subscription<std_msgs::msg::Int16>(
+        adjust_topic, 10, std::bind(&SimaNavigator::adjustCallback, this, std::placeholders::_1));
 
     costmap_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>(
         "/global_costmap/costmap", state_qos, std::bind(&SimaNavigator::costmapCallback, this, std::placeholders::_1));
@@ -1293,10 +1321,26 @@ void SimaNavigator::costmapCallback(const nav_msgs::msg::OccupancyGrid::SharedPt
     latest_costmap_ = msg;
 }
 
+void SimaNavigator::adjustCallback(const std_msgs::msg::Int16::SharedPtr msg)
+{
+    // 只有在 IDLE 狀態下才能進入調整狀態，避免干擾正常任務
+    if (current_state_ == State::IDLE && msg->data == 1) {
+        RCLCPP_INFO(this->get_logger(), "Received Adjust Signal! Starting Pre-Positioning.");
+        current_state_ = State::PRE_POSITIONING;
+        pre_pos_step_ = 0;
+        pre_pos_timer_ = this->now();
+    }
+}
+
 void SimaNavigator::startCallback(const std_msgs::msg::String::SharedPtr msg)
 {
-    if (current_state_ == State::IDLE && !msg->data.empty()) {
+    if ((current_state_ == State::IDLE || current_state_ == State::PRE_POSITIONING) && !msg->data.empty()) {
         std::string raw_data = msg->data;
+
+        if (current_state_ == State::PRE_POSITIONING) {
+            RCLCPP_WARN(this->get_logger(), "Pre-Positioning INTERRUPTED by formal Start Signal!");
+            stopRobot();
+        }
         
         std::stringstream ss(raw_data);
         std::string item;
@@ -1349,7 +1393,70 @@ void SimaNavigator::startCallback(const std_msgs::msg::String::SharedPtr msg)
 // 【核心修改】擴展控制迴圈，加入 4 號的盲走狀態機
 void SimaNavigator::controlLoop()
 {
-    if (current_state_ == State::DELAYING) {
+    if (current_state_ == State::IDLE) {
+        stopRobot();
+    }
+    if (current_state_ == State::PRE_POSITIONING) {
+        int base_id = sima_id_ % 10; // 取出 1, 2, 3, 4
+        auto elapsed = (this->now() - pre_pos_timer_).seconds();
+        geometry_msgs::msg::Twist cmd_vel;
+
+        if (base_id == 1 || base_id == 2) {
+            // 1號、2號執行 [前進1 -> 旋轉1 -> 前進2 -> 旋轉2]
+            if (pre_pos_step_ == 0) { 
+                // Step 0: 第一段前進 (套用 fwd1 參數)
+                if (elapsed < pre_pos_fwd1_sec_) {
+                    cmd_vel.linear.x = pre_pos_fwd1_speed_ * calculateVelocityRatio(elapsed, pre_pos_fwd1_sec_);
+                    cmd_vel_pub_->publish(cmd_vel);
+                } else {
+                    stopRobot();
+                    pre_pos_step_ = 1; pre_pos_timer_ = this->now();
+                }
+            } else if (pre_pos_step_ == 1) { 
+                // Step 1: 第一段旋轉 (套用 spin1 參數)
+                if (elapsed < pre_pos_spin1_sec_) {
+                    cmd_vel.angular.z = pre_pos_spin1_speed_ * calculateVelocityRatio(elapsed, pre_pos_spin1_sec_);
+                    cmd_vel_pub_->publish(cmd_vel);
+                } else {
+                    stopRobot();
+                    pre_pos_step_ = 2; pre_pos_timer_ = this->now();
+                }
+            } else if (pre_pos_step_ == 2) { 
+                // Step 2: 第二段前進 (套用 fwd2 參數)
+                if (elapsed < pre_pos_fwd2_sec_) {
+                    cmd_vel.linear.x = pre_pos_fwd2_speed_ * calculateVelocityRatio(elapsed, pre_pos_fwd2_sec_);
+                    cmd_vel_pub_->publish(cmd_vel);
+                } else {
+                    stopRobot();
+                    pre_pos_step_ = 3; pre_pos_timer_ = this->now();
+                }
+            } else if (pre_pos_step_ == 3) { 
+                // Step 3: 第二段旋轉 (套用 spin2 參數)
+                if (elapsed < pre_pos_spin2_sec_) {
+                    cmd_vel.angular.z = pre_pos_spin2_speed_ * calculateVelocityRatio(elapsed, pre_pos_spin2_sec_);
+                    cmd_vel_pub_->publish(cmd_vel);
+                } else {
+                    stopRobot();
+                    RCLCPP_INFO(this->get_logger(), "Pre-Positioning Sequence Finished. Waiting for Start.");
+                    current_state_ = State::IDLE; // 恢復 IDLE 準備接 Goal
+                }
+            }
+        } else {
+            // 3號、4號執行 [僅一次前進]
+            // 直接共用第一段前進的參數 (fwd1)
+            if (pre_pos_step_ == 0) {
+                if (elapsed < pre_pos_fwd1_sec_) {
+                    cmd_vel.linear.x = pre_pos_fwd1_speed_ * calculateVelocityRatio(elapsed, pre_pos_fwd1_sec_);
+                    cmd_vel_pub_->publish(cmd_vel);
+                } else {
+                    stopRobot();
+                    RCLCPP_INFO(this->get_logger(), "Pre-Positioning Finished. Waiting for Start.");
+                    current_state_ = State::IDLE;
+                }
+            }
+        }
+    }
+    else if (current_state_ == State::DELAYING) {
         double start_delay = this->get_parameter("start_delay_seconds").as_double();
         if ((this->now() - delay_start_time_).seconds() >= start_delay) {
             RCLCPP_INFO(this->get_logger(), "Delay finished. Starting sprinting phase...");
@@ -1425,6 +1532,7 @@ void SimaNavigator::stopRobot()
     geometry_msgs::msg::Twist cmd_vel;
     cmd_vel.linear.x = 0.0;
     cmd_vel.angular.z = 0.0;
+    cmd_vel_pub_->publish(cmd_vel);
     cmd_vel_pub_->publish(cmd_vel);
 }
 
@@ -1543,8 +1651,8 @@ void SimaNavigator::executeMission()
         plan_msg.data = "GridBased_Pease";
         // 保守派速度配置
         smoother_params = {
-            rclcpp::Parameter("max_velocity", std::vector<double>{0.44, 0.44, 12.0}),
-            rclcpp::Parameter("max_accel", std::vector<double>{0.25, 0.25, 120.0})
+            rclcpp::Parameter("max_velocity", std::vector<double>{0.55, 0.44, 30.0}),
+            rclcpp::Parameter("max_accel", std::vector<double>{0.25, 0.25, 150.0})
         };
         costmap_params = {
             rclcpp::Parameter("inflation_layer.inflation_radius", 0.12),
