@@ -83,7 +83,8 @@ private:
     rclcpp::Time last_time_;
 
     // Helper functions
-    double findMaxCurvature(const nav_msgs::msg::Path & transformed_plan, size_t lookahead_index);
+    double findMaxCurvature(const nav_msgs::msg::Path & transformed_plan);
+    double calculateDynamicSafeSpeed(const nav_msgs::msg::Path & plan);
 
     // Plan
     nav_msgs::msg::Path global_plan_;
