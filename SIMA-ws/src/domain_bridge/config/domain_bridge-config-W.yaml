@@ -112,6 +112,21 @@ topics:
     type: std_msgs/msg/Bool
     to_domain: 64
     remap: stopRobot 
+  
+  /sima_12/adjust:
+    type: std_msgs/msg/Int16
+    from_domain: 61
+    to_domain: 62
+  
+  /sima_13/adjust:
+    type: std_msgs/msg/Int16
+    from_domain: 61
+    to_domain: 63
+  
+  /sima_14/adjust:
+    type: std_msgs/msg/Int16
+    from_domain: 61
+    to_domain: 64
 
   # Bridge pantry status topic to sima 1 domain
   /pantry_status:
