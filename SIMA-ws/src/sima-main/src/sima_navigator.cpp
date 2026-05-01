@@ -1030,7 +1030,7 @@ void SimaNavigator::controlLoop()
             cmd_vel_pub_->publish(cmd_vel);
         } else {
             stopRobot();
-            if (sima_id_ == 4) {
+            if (sima_id_ == 4 || sima_id_ == 14) {
                 RCLCPP_INFO(this->get_logger(), "Phase 1 (Forward) completed. Starting Phase 2 (Spin Right)...");
                 current_state_ = State::SEQ_SPIN;
                 seq_start_time_ = this->now();
