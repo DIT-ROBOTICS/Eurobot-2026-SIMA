@@ -43,9 +43,9 @@ sima_navigator:
     pantry_E_waypoints_normal: [1.9, 0.8, 1.55, 0.2]   # 很難攻擊所以算了
     pantry_F_waypoints_normal: [2.0, 1.2, 1.53, 0.82]  # 還行
     pantry_G_waypoints_normal: [2.5, 1.4, 1.89, 1.47]   # ignore
-    pantry_H_waypoints_normal: [2.25, 0.85]    # finish
+    pantry_H_waypoints_normal: [2.25, 0.77]    # finish
     pantry_I_waypoints_normal: [2.7, 0.8, 2.3, 0.15]   # 還行
-    pantry_J_waypoints_normal: [2.85, 0.85]    # finish
+    pantry_J_waypoints_normal: [2.85, 0.75]    # finish
 
 
     # aggressive
@@ -67,7 +67,7 @@ sima_strategy:
     mission_type: 2    # (1: Peace, 2: Normal, 3: Aggressive)
 
     fixed_sima_id: 14
-    fixed_sima_pantry: "pantry_G"
+    fixed_sima_pantry: "pantry_D"
     fixed_sima_mission: 1
 
     # pease/normal
