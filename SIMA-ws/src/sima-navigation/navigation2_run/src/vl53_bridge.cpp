@@ -96,7 +96,7 @@ void VL53Bridge::rawDataCallback(const std_msgs::msg::Float32MultiArray::SharedP
         else if (i == 2) mapped_idx = 0; // 軟體的 右感測器(2)，去抓韌體傳來的 左資料(0)
         
         float raw_dist = msg->data[mapped_idx]; // 原本是 msg->data[i];
-
+        
         float output_dist = std::numeric_limits<float>::infinity(); // initial output(inf)
 
         if (raw_dist > 0.01f && raw_dist <= max_trust_dist_) {
