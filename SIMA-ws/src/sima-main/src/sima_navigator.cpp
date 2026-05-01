@@ -957,7 +957,7 @@ void SimaNavigator::controlLoop()
         auto elapsed = (this->now() - pre_pos_timer_).seconds();
         geometry_msgs::msg::Twist cmd_vel;
 
-        if (base_id == 1 || base_id == 2) {
+        if (base_id == 1 || base_id == 2 || base_id == 3 || base_id == 4) {
             // 1號、2號執行 [前進1 -> 旋轉1 -> 前進2 -> 旋轉2]
             if (pre_pos_step_ == 0) { 
                 // Step 0: 第一段前進 (套用 fwd1 參數)
@@ -997,20 +997,21 @@ void SimaNavigator::controlLoop()
                     current_state_ = State::IDLE; // 恢復 IDLE 準備接 Goal
                 }
             }
-        } else {
-            // 3號、4號執行 [僅一次前進]
-            // 直接共用第一段前進的參數 (fwd1)
-            if (pre_pos_step_ == 0) {
-                if (elapsed < pre_pos_fwd1_sec_) {
-                    cmd_vel.linear.x = pre_pos_fwd1_speed_ * calculateVelocityRatio(elapsed, pre_pos_fwd1_sec_);
-                    cmd_vel_pub_->publish(cmd_vel);
-                } else {
-                    stopRobot();
-                    RCLCPP_INFO(this->get_logger(), "Pre-Positioning Finished. Waiting for Start.");
-                    current_state_ = State::IDLE;
-                }
-            }
-        }
+        } 
+        // else {
+        //     // 3號、4號執行 [僅一次前進]
+        //     // 直接共用第一段前進的參數 (fwd1)
+        //     if (pre_pos_step_ == 0) {
+        //         if (elapsed < pre_pos_fwd1_sec_) {
+        //             cmd_vel.linear.x = pre_pos_fwd1_speed_ * calculateVelocityRatio(elapsed, pre_pos_fwd1_sec_);
+        //             cmd_vel_pub_->publish(cmd_vel);
+        //         } else {
+        //             stopRobot();
+        //             RCLCPP_INFO(this->get_logger(), "Pre-Positioning Finished. Waiting for Start.");
+        //             current_state_ = State::IDLE;
+        //         }
+        //     }
+        // }
     }
     else if (current_state_ == State::DELAYING) {
         double start_delay = this->get_parameter("start_delay_seconds").as_double();
@@ -1029,18 +1030,18 @@ void SimaNavigator::controlLoop()
             cmd_vel_pub_->publish(cmd_vel);
         } else {
             stopRobot();
-            // if (sima_id_ == 4) {
-            //     RCLCPP_INFO(this->get_logger(), "Phase 1 (Forward) completed. Starting Phase 2 (Spin Right)...");
-            //     current_state_ = State::SEQ_SPIN;
-            //     seq_start_time_ = this->now();
-            // } else {
-            //     RCLCPP_INFO(this->get_logger(), "Sprint phase completed. Starting navigation phase...");
-            //     current_state_ = State::NAVIGATING;
-            //     executeMission();
-            // }
-            RCLCPP_INFO(this->get_logger(), "Sprint phase completed. Starting navigation phase...");
-            current_state_ = State::NAVIGATING;
-            executeMission();
+            if (sima_id_ == 4) {
+                RCLCPP_INFO(this->get_logger(), "Phase 1 (Forward) completed. Starting Phase 2 (Spin Right)...");
+                current_state_ = State::SEQ_SPIN;
+                seq_start_time_ = this->now();
+            } else {
+                RCLCPP_INFO(this->get_logger(), "Sprint phase completed. Starting navigation phase...");
+                current_state_ = State::NAVIGATING;
+                executeMission();
+            }
+            // RCLCPP_INFO(this->get_logger(), "Sprint phase completed. Starting navigation phase...");
+            // current_state_ = State::NAVIGATING;
+            // executeMission();
         }
     }
     // 【新增】4 號機第二階段：自轉 (加上梯形曲線防打滑)
@@ -1250,7 +1251,7 @@ void SimaNavigator::executeMission()
         RCLCPP_WARN(this->get_logger(), "Global Costmap param service not available. Costmap remains unchanged.");
     }
 
-    rclcpp::sleep_for(std::chrono::milliseconds(50));
+    // rclcpp::sleep_for(std::chrono::milliseconds(50));
 
     // 4. Check Costmap and Generate Path
     {
