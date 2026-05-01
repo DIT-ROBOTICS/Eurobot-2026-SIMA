@@ -89,7 +89,14 @@ void VL53Bridge::rawDataCallback(const std_msgs::msg::Float32MultiArray::SharedP
     double half_fov_clear = deg2rad(half_fov_clear_deg_);     // erase wall marker
 
     for (size_t i = 0; i < sensors_.size(); ++i) {
-        float raw_dist = msg->data[i];
+        // float raw_dist = msg->data[i];
+        // 🚨 --- 韌體左右顛倒的暫時解法 (TODO: 韌體修復後請移除此段) --- 🚨
+        size_t mapped_idx = i;
+        if (i == 0) mapped_idx = 2;      // 軟體的 左感測器(0)，去抓韌體傳來的 右資料(2)
+        else if (i == 2) mapped_idx = 0; // 軟體的 右感測器(2)，去抓韌體傳來的 左資料(0)
+        
+        float raw_dist = msg->data[mapped_idx]; // 原本是 msg->data[i];
+        
         float output_dist = std::numeric_limits<float>::infinity(); // initial output(inf)
 
         if (raw_dist > 0.01f && raw_dist <= max_trust_dist_) {

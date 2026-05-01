@@ -360,8 +360,8 @@ void SimaStrategyNode::executeAdjustSequence() {
     // 陣列 index 0,1,2,3 對應機器人 ID 1,2,3,4 (或 11,12,13,14)
     if (adjust_step_ == 0) target_idx = 0;      // 1號 (11號)
     else if (adjust_step_ == 1) target_idx = 1; // 2號 (12號)
-    else if (adjust_step_ == 2) target_idx = 3; // 4號 (14號)
-    else if (adjust_step_ == 3) target_idx = 2; // 3號 (13號)
+    else if (adjust_step_ == 2) target_idx = 2; // 3號 (13號)
+    else if (adjust_step_ == 3) target_idx = 3; // 4號 (14號)
 
     if (target_idx != -1 && adjust_pubs_.count(target_idx)) {
         auto msg = std_msgs::msg::Int16();
