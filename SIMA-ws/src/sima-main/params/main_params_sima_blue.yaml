@@ -1,21 +1,21 @@
 sima_navigator:
   ros__parameters:
-    sima_id: 1
+    sima_id: 2
 
     # adjusting phase
     pre_pos_fwd1_sec: 2.6
     pre_pos_fwd1_speed: 0.15
-    pre_pos_spin1_sec: 1.4
-    pre_pos_spin1_speed: -1.5  # 負數向右轉
-    pre_pos_fwd2_sec: 2.2      # 第二段走比較久
+    pre_pos_spin1_sec: 0.45
+    pre_pos_spin1_speed: -1.0  # 負數向右轉
+    pre_pos_fwd2_sec: 0.0      # 第二段走比較久
     pre_pos_fwd2_speed: 0.2    # 第二段速度稍快
-    pre_pos_spin2_sec: 1.0
+    pre_pos_spin2_sec: 0.0
     pre_pos_spin2_speed: 1.5   # 正數向左轉
 
     # sprinting phase
     sprint_duration_sec: 3.0
-    sprint_speed: 0.5
-    start_delay_seconds: 0.0
+    sprint_speed: 0.4
+    start_delay_seconds: 0.5
 
     # for only sima 004
     seq_spin_duration_sec: 1.5   # 旋轉要花幾秒
@@ -25,15 +25,15 @@ sima_navigator:
 
     # pease
     pantry_A_waypoints: [1.5, 0.5, 2.3, 0.8]  # no use
-    pantry_B_waypoints: [1.1, 0.2, 0.65, 0.1]  # no use
+    pantry_B_waypoints: [1.5, 0.4, 0.77, 0.18]  # finish 2
     pantry_C_waypoints: [0.92, 0.92]   # no use
     pantry_D_waypoints: [1.8, 1.0, 1.37, 1.3]   # finish
-    pantry_E_waypoints: [1.9, 0.8, 1.55, 0.22]
-    pantry_F_waypoints: [1.55, 0.92]  # finish
+    pantry_E_waypoints: [1.6, 0.18]  # finish 2
+    pantry_F_waypoints: [1.55, 0.72]  # finish 2
     pantry_G_waypoints: [2.5, 1.4, 1.89, 1.47]  # ignore
-    pantry_H_waypoints: [2.27, 0.92]   # finish
-    pantry_I_waypoints: [2.4, 0.22]    # finish
-    pantry_J_waypoints: [2.78, 0.95]   # finish
+    pantry_H_waypoints: [2.27, 0.7]   # finish 2
+    pantry_I_waypoints: [2.4, 0.18]    # finish 2
+    pantry_J_waypoints: [2.78, 0.75]   # finish 2
 
     # normal
     pantry_A_waypoints_normal: [0.3, 1.0, 0.15, 0.85]   # no use
@@ -74,13 +74,13 @@ sima_strategy:
     pantry_A_time_normal: 50.0 
     pantry_B_time_normal: 50.0
     pantry_C_time_normal: 50.0
-    pantry_D_time_normal: 13.0
-    pantry_E_time_normal: 12.09
-    pantry_F_time_normal: 12.12
-    pantry_G_time_normal: 13.0
-    pantry_H_time_normal: 7.55
-    pantry_I_time_normal: 7.45
-    pantry_J_time_normal: 7.35
+    pantry_D_time_normal: 50.0
+    pantry_E_time_normal: 12.0
+    pantry_F_time_normal: 10.0
+    pantry_G_time_normal: 50.0
+    pantry_H_time_normal: 8.0
+    pantry_I_time_normal: 7.0
+    pantry_J_time_normal: 7.0
 
     # aggressive
     pantry_A_time_aggressive: 14.3 
