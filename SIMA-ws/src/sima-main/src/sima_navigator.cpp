@@ -1252,12 +1252,6 @@ SimaNavigator::SimaNavigator() : Node("sima_navigator")
     this->declare_parameter("pre_pos_fwd2_speed", 0.3);
     this->declare_parameter("pre_pos_spin2_sec", 0.5);
     this->declare_parameter("pre_pos_spin2_speed", 0.5);
-    
-    // 【新增】宣告 4 號機的特種盲走參數
-    this->declare_parameter("seq_spin_duration_sec", 1.0);
-    this->declare_parameter("seq_spin_speed", -1.5); // 預設負數為向右轉
-    this->declare_parameter("seq_forward2_duration_sec", 1.5);
-    this->declare_parameter("seq_forward2_speed", 0.4);
 
     sprint_duration_sec_ = this->get_parameter("sprint_duration_sec").as_double();
     sprint_speed_ = this->get_parameter("sprint_speed").as_double();
@@ -1296,7 +1290,7 @@ SimaNavigator::SimaNavigator() : Node("sima_navigator")
     std::string adjust_topic = "/sima_" + std::to_string(sima_id_) + "/adjust";
     adjust_sub_ = this->create_subscription<std_msgs::msg::Int16>(
         adjust_topic, 10, std::bind(&SimaNavigator::adjustCallback, this, std::placeholders::_1));
-
+    
     costmap_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>(
         "/global_costmap/costmap", state_qos, std::bind(&SimaNavigator::costmapCallback, this, std::placeholders::_1));
 
