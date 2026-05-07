@@ -1,6 +1,6 @@
 sima_navigator:
   ros__parameters:
-    sima_id: 1
+    sima_id: 3
 
     # adjusting phase
     pre_pos_fwd1_sec: 2.6
@@ -65,7 +65,7 @@ sima_navigator:
 
 sima_strategy:
   ros__parameters:
-    sima_id: 1
+    sima_id: 3
     max_pantry_to_target: 4
     mission_type: 2    # (1: Peace, 2: Normal, 3: Aggressive)
 
