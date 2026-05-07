@@ -96,3 +96,7 @@ sima_strategy:
     pantry_H_time_aggressive: 7.55
     pantry_I_time_aggressive: 7.45
     pantry_J_time_aggressive: 7.35
+
+sima_status_pub:
+  ros__parameters:
+    sima_id: 1

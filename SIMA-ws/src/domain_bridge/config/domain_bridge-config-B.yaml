@@ -149,6 +149,27 @@ topics:
     from_domain: 51
     to_domain: 54
 
+  # Bridge sima status topic to web domain
+  /sima_001/status:
+    type: std_msgs/msg/Bool
+    from_domain: 51
+    to_domain: 13
+  
+  /sima_002/status:
+    type: std_msgs/msg/Bool
+    from_domain: 52
+    to_domain: 13
+  
+  /sima_003/status:
+    type: std_msgs/msg/Bool
+    from_domain: 53
+    to_domain: 13
+
+  /sima_004/status:
+    type: std_msgs/msg/Bool
+    from_domain: 54
+    to_domain: 13
+
   # # Bridge "/clock" topic from doman ID 2 to domain ID 3
   # clock:
   #   type: rosgraph_msgs/msg/Clock

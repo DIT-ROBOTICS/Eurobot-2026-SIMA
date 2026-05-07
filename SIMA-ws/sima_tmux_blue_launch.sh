@@ -51,9 +51,9 @@ sleep 5
 # 將多個 ros2 run 包進一個 bash group 中執行
 if [ "$ROS_DOMAIN_ID" = "51" ] || [ "$ROS_DOMAIN_ID" = "61" ]; then
     echo "Launching strategy node for sima-001 or sima-011"
-    CMD3="bash -c \"trap 'kill 0' SIGINT; ros2 run sima-main system_check & ros2 run sima-main sima_navigator --ros-args --params-file ${PARAMS_FILE} & ros2 run sima-main sima_strategy --ros-args --params-file ${PARAMS_FILE} -p mission_type:=${MISSION_TYPE} & wait\""
+    CMD3="bash -c \"trap 'kill 0' SIGINT; ros2 run sima-main system_check & ros2 run sima-main sima_navigator --ros-args --params-file ${PARAMS_FILE} & ros2 run sima-main sima_status_pub --ros-args --params-file ${PARAMS_FILE} & ros2 run sima-main sima_strategy --ros-args --params-file ${PARAMS_FILE} -p mission_type:=${MISSION_TYPE} & wait\""
 else
-    CMD3="bash -c \"trap 'kill 0' SIGINT; ros2 run sima-main system_check & ros2 run sima-main sima_navigator --ros-args --params-file ${PARAMS_FILE} & wait\""
+    CMD3="bash -c \"trap 'kill 0' SIGINT; ros2 run sima-main system_check & ros2 run sima-main sima_navigator --ros-args --params-file ${PARAMS_FILE} & ros2 run sima-main sima_status_pub --ros-args --params-file ${PARAMS_FILE} & wait\""
 fi
 tmux send-keys -t $SESSION_NAME:0.2 "$CMD3" C-m
 

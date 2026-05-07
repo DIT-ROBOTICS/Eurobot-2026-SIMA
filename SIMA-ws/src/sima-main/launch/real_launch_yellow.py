@@ -65,6 +65,14 @@ def generate_launch_description():
         parameters=[mission_params_file]
     )
 
+    sima_status_pub_cmd = Node(
+        package='sima-main',
+        executable='sima_status_pub',
+        name='sima_status_pub',
+        output='screen',
+        parameters=[mission_params_file]
+    )
+
     strategy_node_cmd = Node(
         package='sima-main',
         executable='sima_strategy',
@@ -90,6 +98,7 @@ def generate_launch_description():
     
     ld.add_action(system_check_cmd)
     ld.add_action(sima_navigator_cmd)
+    ld.add_action(sima_status_pub_cmd)
 
     if ros_domain_id == '51' or ros_domain_id == '61':  # sima-001 and sima-011
         print ("Launching strategy node for sima-001 or sima-011")
