@@ -37,55 +37,47 @@
 
 
 <root main_tree_to_execute="MainTree">
-  <BehaviorTree ID="MainTree"> <StopController name="StopController">
-    <RecoveryNode number_of_retries="6" name="NavigateRecovery">
-      <PipelineSequence name="NavigateWithReplanning">
-
-        <RateController hz="4.0">
-          <RecoveryNode number_of_retries="3" name="ComputePathThroughPoses">
-            <ReactiveSequence>
-              <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" radius="0.15" robot_base_frame="base_link"/>
-
-              <PlannerSelector topic_name="/planner_type_thru" default_planner="GridBased_Pease" selected_planner="{selected_planner}"/>
-              
-              <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="{selected_planner}"/>
-            </ReactiveSequence>
-            <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
-          </RecoveryNode>
-        </RateController>
-
-        <RecoveryNode number_of_retries="3" name="FollowPath">
-          <ReactiveSequence>
-            <ControllerSelector topic_name="/controller_type_thru" default_controller="Diff" selected_controller="{controller}"/>
-            <GoalCheckerSelector topic_name="/goal_checker_type_thru" default_goal_checker="Loose" selected_goal_checker="{goal_checker}"/>
+  <BehaviorTree ID="MainTree"> 
+    <StopController name="StopController">
+      <!-- Removed SetupUpdater and ResetRecovery -->
+      <RecoveryNode number_of_retries="6" name="NavigateRecovery">
+        
+        <RetryUntilSuccessful num_attempts="3">
+          <PipelineSequence name="NavigateWithReplanning">
             
-            <FollowPath path="{path}" controller_id="{controller}" goal_checker_id="{goal_checker}"/>
-          </ReactiveSequence>
-          
-          <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
-        </RecoveryNode>
+            <RateController hz="4.0">
+              <RecoveryNode number_of_retries="1" name="ComputePathThroughPoses">
+                <Sequence>
+                  <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" radius="0.10" robot_base_frame="base_link"/>
+                  <PlannerSelector topic_name="/planner_type_thru" default_planner="GridBased_Pease" selected_planner="{selected_planner}"/>
+                  <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="{selected_planner}"/>
+                </Sequence>
+                <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
+              </RecoveryNode>
+            </RateController>
 
-      </PipelineSequence>
+            <Sequence>
+              <ControllerSelector topic_name="/controller_type_thru" default_controller="Diff" selected_controller="{controller}"/>
+              <GoalCheckerSelector topic_name="/goal_checker_type_thru" default_goal_checker="Loose" selected_goal_checker="{goal_checker}"/>
+              <FollowPath path="{path}" controller_id="{controller}" goal_checker_id="{goal_checker}"/>
+            </Sequence>
 
-      <ReactiveFallback name="RecoveryFallback">
-        <GoalUpdated/>
-        <RoundRobin name="RecoveryActions">
-          
-          <!-- <Sequence name="ClearingActions">
+          </PipelineSequence>
+        </RetryUntilSuccessful>
+
+        <!-- Replaced custom Escape/Shrink with standard BackUp and Wait -->
+        <ReactiveFallback name="RecoveryFallback">
+          <GoalUpdated/>
+          <RoundRobin name="RecoveryActions">
+            <Wait wait_duration="0.5"/>
+            <!-- Adjust these parameters based on your robot's size -->
+            <BackUp backup_dist="0.2" backup_speed="0.1"/>
             <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
-            <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
-          </Sequence> -->
+            <Wait wait_duration="0.5"/>
+          </RoundRobin>
+        </ReactiveFallback>
 
-          <Wait wait_duration="1.0"/>
-
-          <BackUp backup_dist="0.15" backup_speed="0.05"/>
-
-          <Spin spin_dist="1.57"/>
-
-          <Wait wait_duration="2.0"/> 
-        </RoundRobin>
-      </ReactiveFallback>
-
-    </RecoveryNode>
-  </StopController></BehaviorTree>
+      </RecoveryNode>
+    </StopController>
+  </BehaviorTree>
 </root>
