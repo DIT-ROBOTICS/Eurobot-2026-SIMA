@@ -35,6 +35,11 @@ target_include_directories(system_check PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
+add_executable(sima_status_pub src/sima_status_pub.cpp)
+target_include_directories(sima_status_pub PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
 ament_target_dependencies(sima_navigator
   rclcpp
   rclcpp_action
@@ -60,10 +65,16 @@ ament_target_dependencies(system_check
   btcpp_ros2_interfaces
 )
 
+ament_target_dependencies(sima_status_pub
+  rclcpp
+  std_msgs
+)
+
 install(TARGETS 
   sima_navigator
   sima_strategy
   system_check
+  sima_status_pub
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
