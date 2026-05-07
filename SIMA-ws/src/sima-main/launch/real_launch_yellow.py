@@ -30,6 +30,14 @@ def generate_launch_description():
         description='Path to the parameters file for main'
     )
 
+    declare_mission_type_cmd = DeclareLaunchArgument(
+        'mission_type',
+        default_value = '2',
+        description='Mission Type: 1 (Peace), 2 (Normal), 3 (Aggressive)'
+    )
+
+    mission_type = LaunchConfiguration('mission_type')
+
     localization_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(get_package_share_directory('sima-localization-real'), 'launch', 'robot_localization_yellow.launch.py')),
     )
@@ -57,17 +65,29 @@ def generate_launch_description():
         parameters=[mission_params_file]
     )
 
+    sima_status_pub_cmd = Node(
+        package='sima-main',
+        executable='sima_status_pub',
+        name='sima_status_pub',
+        output='screen',
+        parameters=[mission_params_file]
+    )
+
     strategy_node_cmd = Node(
         package='sima-main',
         executable='sima_strategy',
         name='sima_strategy',
         output='screen',
-        parameters=[mission_params_file]
+        parameters=[
+            mission_params_file,
+            {'mission_type': mission_type}    
+        ]
     )
 
     ld = LaunchDescription()
 
     ld.add_action(declare_params_file_cmd)
+    ld.add_action(declare_mission_type_cmd)
 
     ld.add_action(localization_cmd)
     ld.add_action(navigation_cmd)
@@ -78,6 +98,7 @@ def generate_launch_description():
     
     ld.add_action(system_check_cmd)
     ld.add_action(sima_navigator_cmd)
+    ld.add_action(sima_status_pub_cmd)
 
     if ros_domain_id == '51' or ros_domain_id == '61':  # sima-001 and sima-011
         print ("Launching strategy node for sima-001 or sima-011")
