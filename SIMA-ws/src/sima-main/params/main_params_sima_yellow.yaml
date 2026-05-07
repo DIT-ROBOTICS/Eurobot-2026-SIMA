@@ -1,11 +1,11 @@
 sima_navigator:
   ros__parameters:
-    sima_id: 11
+    sima_id: 2
 
     # adjusting phase
     pre_pos_fwd1_sec: 2.6
     pre_pos_fwd1_speed: 0.15
-    pre_pos_spin1_sec: 0.45
+    pre_pos_spin1_sec: 0.2
     pre_pos_spin1_speed: -1.0  # 負數向右轉
     pre_pos_fwd2_sec: 0.0      # 第二段走比較久
     pre_pos_fwd2_speed: 0.2    # 第二段速度稍快
@@ -13,9 +13,9 @@ sima_navigator:
     pre_pos_spin2_speed: 1.5   # 正數向左轉
 
     # sprinting phase
-    sprint_duration_sec: 3.2
-    sprint_speed: 0.5
-    start_delay_seconds: 0.0
+    sprint_duration_sec: 3.0
+    sprint_speed: 0.4
+    start_delay_seconds: 0.5
 
     # for only sima 004
     seq_spin_duration_sec: 1.5   # 旋轉要花幾秒
@@ -62,11 +62,11 @@ sima_navigator:
 
 sima_strategy:
   ros__parameters:
-    sima_id: 11
+    sima_id: 2
     max_pantry_to_target: 4
     mission_type: 2    # (1: Peace, 2: Normal, 3: Aggressive)
 
-    fixed_sima_id: 14
+    fixed_sima_id: 4
     fixed_sima_pantry: "pantry_D"
     fixed_sima_mission: 1
 
